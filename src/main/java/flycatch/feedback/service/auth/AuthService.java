@@ -30,7 +30,7 @@ public class AuthService implements AuthServiceInterface{
 
         log.info("Attempting to register user with email: {}",request.getEmail());
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (doesUserExistByEmail(request.getEmail())) {
             log.error("User already registered with email: {}", request.getEmail());
             throw new ResourceNotFoundException("User already registered with email");
         }
@@ -40,8 +40,7 @@ public class AuthService implements AuthServiceInterface{
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        Role userRole = roleRepository.findByName("USER").orElseThrow(()->
-                new ResourceNotFoundException("Default USER role not found in the database"));
+        Role userRole = findRoleByName("USER");
         user.setRoles(List.of(userRole));
 
         try {
@@ -61,13 +60,36 @@ public class AuthService implements AuthServiceInterface{
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            User authenticatedUser = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new ResourceNotFoundException("The request is invalid.Please check your input"));
+            User authenticatedUser = findUserByEmail(request.getEmail());
             log.info("User successfully authenticated with email: {}",authenticatedUser.getEmail());
             return authenticatedUser;
         } catch (Exception e) {
             log.error("Authentication failed for user with email: {}", request.getEmail(), e);
             throw new ResourceNotFoundException("The request is invalid.Please check your input");
         }
+    }
+
+    private boolean doesUserExistByEmail(String email){
+        boolean exists = userRepository.findByEmail(email).isPresent();
+        if (exists){
+            log.info("User with email {} already exists in the database.", email);
+        }
+        return exists;
+    }
+
+    private User findUserByEmail(String email){
+        return userRepository.findByEmail(email)
+                .orElseThrow(()->{
+                    log.error("User not found with email: {}", email);
+                    return new ResourceNotFoundException("User not found with email: " + email);
+                });
+    }
+
+    private Role findRoleByName(String roleName){
+        return roleRepository.findByName(roleName)
+                .orElseThrow(()->{
+                    log.error("Role not found with name: {}", roleName);
+                    return new ResourceNotFoundException("Role not found with name: " + roleName);
+                });
     }
 }
