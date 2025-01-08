@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthServiceInterface{
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;

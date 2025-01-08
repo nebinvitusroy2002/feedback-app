@@ -5,6 +5,7 @@ import flycatch.feedback.dto.RegisterRequest;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.response.LoginResponse;
+import flycatch.feedback.response.Response;
 import flycatch.feedback.service.auth.AuthService;
 import flycatch.feedback.service.jwt.JwtService;
 import jakarta.validation.Valid;
@@ -18,9 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,9 +30,9 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signUp")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody @Valid RegisterRequest request){
+    public ResponseEntity<Response> register(@RequestBody @Valid RegisterRequest request){
         User registeredUser = authService.registerUser(request);
-        Map<String,Object> response = createUserResponse(registeredUser);
+        Response response = createUserResponse(registeredUser);
         return ResponseEntity.ok(response);
     }
 
@@ -52,19 +51,17 @@ public class AuthController {
         return ResponseEntity.ok(loginResponse);
     }
 
-    private Map<String,Object> createUserResponse(User user){
-        Map<String,Object> response = new LinkedHashMap<>();
-        response.put("timestamp", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        response.put("Code", HttpStatus.OK.value());
-        response.put("Status",true);
-        response.put("message","Signed up successfully");
-
-        Map<String,Object> data = new LinkedHashMap<>();
-        data.put("id",user.getId());
-        data.put("name",user.getUserName());
-        data.put("email",user.getEmail());
-
-        response.put("data",data);
-        return response;
+    private Response createUserResponse(User user){
+        return Response.builder()
+                .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                .code(HttpStatus.OK.value())
+                .status(true)
+                .message("Signed Up successfully")
+                .data(Response.Data.builder()
+                        .id(user.getId())
+                        .name(user.getUserName())
+                        .email(user.getEmail())
+                        .build())
+                .build();
     }
 }

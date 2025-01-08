@@ -19,7 +19,7 @@ import java.util.function.Function;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class JwtService {
+public class JwtService implements JwtServiceInterface{
 
     @Value("${security.jwt.secret-key}")
     private String secretKey;
