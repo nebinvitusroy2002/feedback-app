@@ -69,27 +69,55 @@ public class AuthService implements AuthServiceInterface{
         }
     }
 
-    private boolean doesUserExistByEmail(String email){
-        boolean exists = userRepository.findByEmail(email).isPresent();
-        if (exists){
-            log.info("User with email {} already exists in the database.", email);
+    private boolean doesUserExistByEmail(String email) {
+        try {
+            boolean exists = userRepository.findByEmail(email).isPresent();
+            if (exists) {
+                log.info("User with email {} already exists in the database.", email);
+            } else {
+                log.info("User with email {} does not exist in the database.", email);
+            }
+            return exists;
+        } catch (Exception e) {
+            log.error("An error occurred while checking if the user with email {} exists in the database.", email, e);
+            throw new ResourceNotFoundException("Unable to verify if the user exists due to a database error.");
         }
-        return exists;
     }
 
-    private User findUserByEmail(String email){
-        return userRepository.findByEmail(email)
-                .orElseThrow(()->{
-                    log.error("User not found with email: {}", email);
-                    return new ResourceNotFoundException("User not found with email: " + email);
-                });
+
+    private User findUserByEmail(String email) {
+        try {
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> {
+                        String errorMessage = "User not found with email: " + email;
+                        log.error(errorMessage);
+                        return new ResourceNotFoundException(errorMessage);
+                    });
+        } catch (ResourceNotFoundException ex) {
+            log.error("Resource not found exception occurred: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error occurred while finding user by email: {}", ex.getMessage());
+            throw new RuntimeException("An unexpected error occurred while processing the request", ex);
+        }
     }
 
-    private Role findRoleByName(String roleName){
-        return roleRepository.findByName(roleName)
-                .orElseThrow(()->{
-                    log.error("Role not found with name: {}", roleName);
-                    return new ResourceNotFoundException("Role not found with name: " + roleName);
-                });
+
+    private Role findRoleByName(String roleName) {
+        try {
+            return roleRepository.findByName(roleName)
+                    .orElseThrow(() -> {
+                        String errorMessage = "Role not found with name: " + roleName;
+                        log.error(errorMessage);
+                        return new ResourceNotFoundException(errorMessage);
+                    });
+        } catch (ResourceNotFoundException ex) {
+            log.error("Resource not found: {}", ex.getMessage());
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error occurred while finding role by name: {}", ex.getMessage());
+            throw new RuntimeException("An unexpected error occurred while processing the request", ex);
+        }
     }
+
 }
