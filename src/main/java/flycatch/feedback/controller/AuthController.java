@@ -2,7 +2,7 @@ package flycatch.feedback.controller;
 
 import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
-import flycatch.feedback.dto.ResetPasswordRequest;
+import flycatch.feedback.dto.ChangePasswordRequest;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.response.LoginResponse;
@@ -55,10 +55,10 @@ public class AuthController {
         return ResponseEntity.ok("Password reset link sent to your email.");
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(
             @RequestParam("token") String token,
-            @RequestBody ResetPasswordRequest request) {
+            @RequestBody ChangePasswordRequest request) {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("New password and confirm password do not match.");
         }

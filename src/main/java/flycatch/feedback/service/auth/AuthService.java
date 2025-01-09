@@ -2,7 +2,7 @@ package flycatch.feedback.service.auth;
 
 import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
-import flycatch.feedback.exception.ResourceNotFoundException;
+import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.repository.RoleRepository;
@@ -36,7 +36,7 @@ public class AuthService implements AuthServiceInterface{
 
         if (doesUserExistByEmail(request.getEmail())) {
             log.error("User already registered with email: {}", request.getEmail());
-            throw new ResourceNotFoundException("User already registered with email");
+            throw new AppException("User already registered with email");
         }
 
         User user = new User();
@@ -53,7 +53,7 @@ public class AuthService implements AuthServiceInterface{
             return savedUser;
         } catch (Exception e) {
             log.error("Error occurred while registering user with email: {}", request.getEmail(), e);
-            throw new ResourceNotFoundException("Error occurred while registering the user");
+            throw new AppException("Error occurred while registering the user");
         }
     }
 
@@ -69,7 +69,7 @@ public class AuthService implements AuthServiceInterface{
             return authenticatedUser;
         } catch (Exception e) {
             log.error("Authentication failed for user with email: {}", request.getEmail(), e);
-            throw new ResourceNotFoundException("The request is invalid.Please check your input");
+            throw new AppException("The request is invalid.Please check your input");
         }
     }
 
@@ -83,19 +83,19 @@ public class AuthService implements AuthServiceInterface{
             user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
             userRepository.save(user);
 
-            String resetLink = "http://localhost:8080/auth/reset-password?token="+token;
+            String resetLink = "http://localhost:8080/auth/change-password?token="+token;
             emailService.sendEmail(
                     user.getEmail(),
                     "Password Reset Request",
                     "Click the link belo to rest your password:\n"+resetLink
             );
             log.info("Password rest email sent to: {}",email);
-        }catch (ResourceNotFoundException e) {
+        }catch (AppException e) {
             log.error("User with email {} not found: {}", email, e.getMessage());
-            throw e; // Bubble up custom exception
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error during forgot password process for email {}: {}", email, e.getMessage());
-            throw new RuntimeException("An unexpected error occurred while processing the forgot password request.", e);
+            throw new AppException("An unexpected error occurred while processing the forgot password request.");
         }
     }
 
@@ -106,7 +106,7 @@ public class AuthService implements AuthServiceInterface{
             User user = findUserByResetToken(token);
             if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())){
                 log.error("Reset token expired for user: {}",user.getEmail());
-                throw new ResourceNotFoundException("Reset token has expired");
+                throw new AppException("Reset token has expired");
             }
 
             user.setPassword(passwordEncoder.encode(newPassword));
@@ -115,12 +115,12 @@ public class AuthService implements AuthServiceInterface{
             userRepository.save(user);
 
             log.info("Password successfully reset for user: {}",user.getEmail());
-        }catch (ResourceNotFoundException e) {
+        }catch (AppException e) {
             log.error("Reset token error: {}", e.getMessage());
-            throw e; // Bubble up custom exception
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error during password reset for token {}: {}", token, e.getMessage());
-            throw new RuntimeException("An unexpected error occurred while resetting the password.", e);
+            throw new AppException("An unexpected error occurred while resetting the password.");
         }
 
     }
@@ -136,7 +136,7 @@ public class AuthService implements AuthServiceInterface{
             return exists;
         } catch (Exception e) {
             log.error("An error occurred while checking if the user with email {} exists in the database.", email, e);
-            throw new ResourceNotFoundException("Unable to verify if the user exists due to a database error.");
+            throw new AppException("Unable to verify if the user exists due to a database error.");
         }
     }
 
@@ -147,14 +147,14 @@ public class AuthService implements AuthServiceInterface{
                     .orElseThrow(() -> {
                         String errorMessage = "User not found with email: " + email;
                         log.error(errorMessage);
-                        return new ResourceNotFoundException(errorMessage);
+                        return new AppException(errorMessage);
                     });
-        } catch (ResourceNotFoundException ex) {
+        } catch (AppException ex) {
             log.error("Resource not found exception occurred: {}", ex.getMessage());
             throw ex;
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding user by email: {}", ex.getMessage());
-            throw new RuntimeException("An unexpected error occurred while processing the request", ex);
+            throw new AppException("An unexpected error occurred while processing the request");
         }
     }
 
@@ -164,14 +164,14 @@ public class AuthService implements AuthServiceInterface{
                     .orElseThrow(() -> {
                         String errorMessage = "Invalid or expired reset token";
                         log.error(errorMessage);
-                        return new ResourceNotFoundException(errorMessage);
+                        return new AppException(errorMessage);
                     });
-        } catch (ResourceNotFoundException ex) {
+        } catch (AppException ex) {
             log.error("Resource not found: {}", ex.getMessage());
             throw ex;
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding user by reset token: {}", ex.getMessage());
-            throw new RuntimeException("An unexpected error occurred while processing the request", ex);
+            throw new AppException("An unexpected error occurred while processing the request");
         }
     }
 
@@ -182,14 +182,14 @@ public class AuthService implements AuthServiceInterface{
                     .orElseThrow(() -> {
                         String errorMessage = "Role not found with name: " + roleName;
                         log.error(errorMessage);
-                        return new ResourceNotFoundException(errorMessage);
+                        return new AppException(errorMessage);
                     });
-        } catch (ResourceNotFoundException ex) {
+        } catch (AppException ex) {
             log.error("Role not found: {}", ex.getMessage());
             throw ex;
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding role by name: {}", ex.getMessage());
-            throw new RuntimeException("An unexpected error occurred while processing the request", ex);
+            throw new AppException("An unexpected error occurred while processing the request");
         }
     }
 

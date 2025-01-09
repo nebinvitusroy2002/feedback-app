@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<String> handleResourceNotFound(ResourceNotFoundException e){
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<String> handleResourceNotFound(AppException e){
         log.error("Resource not found: {}",e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
