@@ -145,7 +145,7 @@ public class AuthService implements AuthServiceInterface{
         }catch (NoSuchElementException e) {
             log.error("No user found with email: {}", email, e);
             throw new AppException("User not found.");
-        }catch (Exception e) {
+        } catch (Exception e) {
             log.error("Unexpected error during password reset for user {}: {}", email, e.getMessage());
             throw new AppException("An unexpected error occurred while resetting the password.");
         }

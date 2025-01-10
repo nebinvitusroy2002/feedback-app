@@ -71,10 +71,11 @@ public class AuthController {
     public ResponseEntity<String> resetPassword(
             @RequestBody ResetPasswordRequest request,
             @RequestHeader("Authorization") String authorizationHeader) {
-
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Missing or invalid Authorization header.");
+        }
         String token = authorizationHeader.replace("Bearer ", "");
         String email = jwtService.extractUsername(token);
-
         authService.resetPassword(email, request.getOldPassword(), request.getNewPassword());
         return ResponseEntity.ok("Password updated successfully.");
     }
