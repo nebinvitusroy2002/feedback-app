@@ -126,6 +126,33 @@ public class AuthService implements AuthServiceInterface{
 
     }
 
+    public void resetPassword(String email, String oldPassword, String newPassword) {
+        log.info("Processing password change for user with email: {}", email);
+
+        try {
+            User user = findUserByEmail(email);
+            if (user == null) {
+                log.error("User not found with email: {}", email);
+                throw new AppException("User not found.");
+            }
+            if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+                log.error("Old password is incorrect for user: {}", email);
+                throw new IllegalArgumentException("Old password is incorrect.");
+            }
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+            log.info("Password updated successfully for user: {}", email);
+        }catch (NoSuchElementException e) {
+            log.error("No user found with email: {}", email, e);
+            throw new AppException("User not found.");
+        }catch (Exception e) {
+            log.error("Unexpected error during password reset for user {}: {}", email, e.getMessage());
+            throw new AppException("An unexpected error occurred while resetting the password.");
+        }
+
+    }
+
+
     private boolean doesUserExistByEmail(String email) {
         try {
             boolean exists = userRepository.findByEmail(email).isPresent();

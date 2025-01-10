@@ -3,6 +3,7 @@ package flycatch.feedback.controller;
 import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
 import flycatch.feedback.dto.ChangePasswordRequest;
+import flycatch.feedback.dto.ResetPasswordRequest;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.response.LoginResponse;
@@ -65,6 +66,19 @@ public class AuthController {
         authService.changePassword(token, request.getNewPassword());
         return ResponseEntity.ok("Password reset successfully.");
     }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestBody ResetPasswordRequest request,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        String token = authorizationHeader.replace("Bearer ", "");
+        String email = jwtService.extractUsername(token);
+
+        authService.resetPassword(email, request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok("Password updated successfully.");
+    }
+
 
     private Response createUserResponse(User user){
         return Response.builder()
