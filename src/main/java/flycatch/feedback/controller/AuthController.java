@@ -62,7 +62,7 @@ public class AuthController {
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("New password and confirm password do not match.");
         }
-        authService.resetPassword(token, request.getNewPassword());
+        authService.changePassword(token, request.getNewPassword());
         return ResponseEntity.ok("Password reset successfully.");
     }
 

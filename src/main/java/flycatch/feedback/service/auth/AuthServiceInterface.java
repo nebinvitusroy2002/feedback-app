@@ -8,5 +8,5 @@ public interface AuthServiceInterface {
     void forgotPassword(String email);
     User registerUser(RegisterRequest request);
     User loginUser(LoginRequest request);
-    void resetPassword(String token,String newPassword);
+    void changePassword(String token, String newPassword);
 }

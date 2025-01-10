@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -87,19 +88,19 @@ public class AuthService implements AuthServiceInterface{
             emailService.sendEmail(
                     user.getEmail(),
                     "Password Reset Request",
-                    "Click the link belo to rest your password:\n"+resetLink
+                    "Click the link below to rest your password:\n"+resetLink
             );
             log.info("Password rest email sent to: {}",email);
-        }catch (AppException e) {
+        }catch (NoSuchElementException  e) {
             log.error("User with email {} not found: {}", email, e.getMessage());
-            throw e;
+            throw new AppException("User with the provided email does not exist.");
         } catch (Exception e) {
             log.error("Unexpected error during forgot password process for email {}: {}", email, e.getMessage());
             throw new AppException("An unexpected error occurred while processing the forgot password request.");
         }
     }
 
-    public void resetPassword(String token,String newPassword){
+    public void changePassword(String token,String newPassword){
         log.info("Processing password reset with token: {}",token);
 
         try {
@@ -115,9 +116,9 @@ public class AuthService implements AuthServiceInterface{
             userRepository.save(user);
 
             log.info("Password successfully reset for user: {}",user.getEmail());
-        }catch (AppException e) {
+        }catch (NoSuchElementException  e) {
             log.error("Reset token error: {}", e.getMessage());
-            throw e;
+            throw new AppException("Invalid reset token.");
         } catch (Exception e) {
             log.error("Unexpected error during password reset for token {}: {}", token, e.getMessage());
             throw new AppException("An unexpected error occurred while resetting the password.");
@@ -149,9 +150,9 @@ public class AuthService implements AuthServiceInterface{
                         log.error(errorMessage);
                         return new AppException(errorMessage);
                     });
-        } catch (AppException ex) {
+        } catch (NoSuchElementException ex) {
             log.error("Resource not found exception occurred: {}", ex.getMessage());
-            throw ex;
+            throw new AppException("Resource not found.");
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding user by email: {}", ex.getMessage());
             throw new AppException("An unexpected error occurred while processing the request");
@@ -166,9 +167,9 @@ public class AuthService implements AuthServiceInterface{
                         log.error(errorMessage);
                         return new AppException(errorMessage);
                     });
-        } catch (AppException ex) {
+        } catch (NoSuchElementException ex) {
             log.error("Resource not found: {}", ex.getMessage());
-            throw ex;
+            throw new AppException("Resource not found.");
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding user by reset token: {}", ex.getMessage());
             throw new AppException("An unexpected error occurred while processing the request");
@@ -184,9 +185,9 @@ public class AuthService implements AuthServiceInterface{
                         log.error(errorMessage);
                         return new AppException(errorMessage);
                     });
-        } catch (AppException ex) {
+        } catch (NoSuchElementException ex) {
             log.error("Role not found: {}", ex.getMessage());
-            throw ex;
+            throw new AppException("Role not found.");
         } catch (Exception ex) {
             log.error("Unexpected error occurred while finding role by name: {}", ex.getMessage());
             throw new AppException("An unexpected error occurred while processing the request");
