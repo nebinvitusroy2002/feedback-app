@@ -7,6 +7,7 @@ import flycatch.feedback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
+@Component
 public class DataInitializer {
 
     private final RoleRepository roleRepository;
