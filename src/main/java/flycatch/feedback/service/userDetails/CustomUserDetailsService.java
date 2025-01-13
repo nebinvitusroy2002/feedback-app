@@ -1,5 +1,6 @@
 package flycatch.feedback.service.userDetails;
 
+import flycatch.feedback.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
@@ -34,10 +35,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             );
         } catch (UsernameNotFoundException e) {
             log.error("Error occurred during user lookup: {}", e.getMessage());
-            throw e;
+            throw new AppException("Error getting the username from database...");
         } catch (Exception e) {
             log.error("Unexpected error occurred while loading user by email: {}", email, e);
-            throw new UsernameNotFoundException("An unexpected error occurred while fetching user details.");
+            throw new AppException("An unexpected error occurred while fetching user details.");
         }
     }
 }

@@ -7,7 +7,9 @@ import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.repository.RoleRepository;
 import flycatch.feedback.repository.UserRepository;
+import flycatch.feedback.response.LoginResponse;
 import flycatch.feedback.service.email.EmailService;
+import flycatch.feedback.service.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +32,8 @@ public class AuthService implements AuthServiceInterface{
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+    private final JwtService jwtService;
+
 
     public User registerUser(RegisterRequest request){
 
@@ -58,8 +62,9 @@ public class AuthService implements AuthServiceInterface{
         }
     }
 
-    public User loginUser(LoginRequest request){
-        log.info("Attempting to login with email: {}",request.getEmail());
+    public LoginResponse loginUser(LoginRequest request) {
+        log.info("Attempting to login with email: {}", request.getEmail());
+
 
         try {
             authenticationManager.authenticate(
@@ -67,7 +72,17 @@ public class AuthService implements AuthServiceInterface{
             );
             User authenticatedUser = findUserByEmail(request.getEmail());
             log.info("User successfully authenticated with email: {}",authenticatedUser.getEmail());
-            return authenticatedUser;
+            List<String> roles = authenticatedUser.getRoles().stream()
+                    .map(Role::getName)
+                    .toList();
+            String token = jwtService.generateToken(authenticatedUser.getEmail(), roles);
+            long expiresIn = jwtService.getExpirationTime();
+            return LoginResponse.builder()
+                    .token(token)
+                    .expiresIn(expiresIn)
+                    .email(authenticatedUser.getEmail())
+                    .roles(roles)
+                    .build();
         } catch (Exception e) {
             log.error("Authentication failed for user with email: {}", request.getEmail(), e);
             throw new AppException("The request is invalid.Please check your input");
@@ -100,8 +115,13 @@ public class AuthService implements AuthServiceInterface{
         }
     }
 
-    public void changePassword(String token,String newPassword){
+    public void changePassword(String token, String newPassword, String confirmPassword){
         log.info("Processing password reset with token: {}",token);
+
+        if (!newPassword.equals(confirmPassword)) {
+            log.error("Password and confirm password do not match");
+            throw new AppException("Password and confirmation do not match.");
+        }
 
         try {
             User user = findUserByResetToken(token);
@@ -123,7 +143,6 @@ public class AuthService implements AuthServiceInterface{
             log.error("Unexpected error during password reset for token {}: {}", token, e.getMessage());
             throw new AppException("An unexpected error occurred while resetting the password.");
         }
-
     }
 
     public void resetPassword(String email, String oldPassword, String newPassword) {
