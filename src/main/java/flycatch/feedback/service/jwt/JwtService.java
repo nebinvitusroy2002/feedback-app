@@ -1,5 +1,6 @@
 package flycatch.feedback.service.jwt;
 
+import flycatch.feedback.exception.AppException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.io.Decoders;
@@ -43,7 +44,6 @@ public class JwtService implements JwtServiceInterface{
                 .compact();
     }
 
-
     private Key getSignInKey(){
         try {
             log.info("Decoding the secret key");
@@ -51,7 +51,7 @@ public class JwtService implements JwtServiceInterface{
             return Keys.hmacShaKeyFor(keyBytes);
         }catch (Exception e){
             log.error("Error decoding the secret key",e);
-            throw new JwtException("Error decoding the secret key",e);
+            throw new AppException("Error decoding the secret key");
         }
     }
     public String extractUsername(String token){
@@ -60,7 +60,7 @@ public class JwtService implements JwtServiceInterface{
             return extractClaim(token, Claims::getSubject);
         }catch (JwtException | IllegalArgumentException e){
             log.error("Error extracting username from token",e);
-            throw new JwtException("Error extracting username from token",e);
+            throw new AppException("Error extracting username from token");
         }
     }
 
@@ -71,7 +71,7 @@ public class JwtService implements JwtServiceInterface{
             return claimsResolver.apply(claims);
         }catch (JwtException | IllegalArgumentException e) {
             log.error("Error extracting claim from token",e);
-            throw new JwtException("Error extracting claim from token",e);
+            throw new AppException("Error extracting claim from token");
         }
     }
 
@@ -86,7 +86,7 @@ public class JwtService implements JwtServiceInterface{
                     .getBody();
         } catch (JwtException e){
             log.error("Error extracting claims from token",e);
-            throw new JwtException("Error extracting claims from token",e);
+            throw new AppException("Error extracting claims from token");
         }
     }
 
@@ -102,7 +102,7 @@ public class JwtService implements JwtServiceInterface{
             return (username.equals(userDetails.getUsername()));
         }catch (JwtException | IllegalArgumentException e){
             log.error("Error validating token",e);
-            throw new JwtException("Error validating token",e);
+            throw new AppException("Error validating token");
         }
     }
 
@@ -112,7 +112,7 @@ public class JwtService implements JwtServiceInterface{
             return extractExpiration(token).before(new Date());
         }catch (JwtException e){
             log.error("Error checking token expiration",e);
-            throw new JwtException("Error checking token expiration",e);
+            throw new AppException("Error checking token expiration");
         }
     }
 
@@ -122,7 +122,7 @@ public class JwtService implements JwtServiceInterface{
             return extractClaim(token, Claims::getExpiration);
         }catch (JwtException | IllegalArgumentException e){
             log.error("Error extracting expiration from token",e);
-            throw new JwtException("Error extracting expiration from token",e);
+            throw new AppException("Error extracting expiration from token");
         }
     }
 

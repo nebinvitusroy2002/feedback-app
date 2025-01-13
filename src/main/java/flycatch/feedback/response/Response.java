@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -17,8 +19,9 @@ public class Response {
     @lombok.Data
     @Builder
     public static class Data{
-        private Long id;
-        private String name;
         private String email;
+        private List<String> roles;
+        private String token;
+        private long expiresIn;
     }
 }

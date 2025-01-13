@@ -3,6 +3,7 @@ package flycatch.feedback.controller;
 import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
 import flycatch.feedback.dto.ChangePasswordRequest;
+import flycatch.feedback.dto.ResetPasswordRequest;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.response.LoginResponse;
@@ -13,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,29 +26,17 @@ import java.util.List;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final JwtService jwtService;
     private final AuthService authService;
 
     @PostMapping("/signUp")
-    public ResponseEntity<Response> register(@RequestBody @Valid RegisterRequest request){
-        User registeredUser = authService.registerUser(request);
-        Response response = createUserResponse(registeredUser);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<User> register(@RequestBody @Valid RegisterRequest request){
+        return ResponseEntity.ok(authService.registerUser(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticate(@RequestBody @Valid LoginRequest request){
-        User authenticatedUser = authService.loginUser(request);
-        List<String> roles = authenticatedUser
-                .getRoles()
-                .stream()
-                .map(Role::getName)
-                .toList();
-        String jwtToken = jwtService.generateToken(authenticatedUser.getEmail(),roles);
-        LoginResponse loginResponse = new LoginResponse()
-                .setToken(jwtToken)
-                .setExpiresIn(jwtService.getExpirationTime());
-        return ResponseEntity.ok(loginResponse);
+    public ResponseEntity<Response> login(@RequestBody @Valid LoginRequest request) {
+        LoginResponse loginResponse = authService.loginUser(request);
+        return ResponseEntity.ok(createUserResponse(loginResponse));
     }
 
     @PostMapping("/forgot-password")
@@ -59,23 +49,30 @@ public class AuthController {
     public ResponseEntity<String> changePassword(
             @RequestParam("token") String token,
             @RequestBody ChangePasswordRequest request) {
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-            throw new IllegalArgumentException("New password and confirm password do not match.");
-        }
-        authService.changePassword(token, request.getNewPassword());
+        authService.changePassword(token, request.getNewPassword(), request.getConfirmPassword());
         return ResponseEntity.ok("Password reset successfully.");
     }
 
-    private Response createUserResponse(User user){
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestBody ResetPasswordRequest request,
+            Authentication authentication) {
+        authService.resetPassword(authentication.getName(), request.getOldPassword(),request.getNewPassword());
+        return ResponseEntity.ok("Password updated successfully.");
+    }
+
+
+    private Response createUserResponse(LoginResponse loginResponse) {
         return Response.builder()
                 .timestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
                 .code(HttpStatus.OK.value())
                 .status(true)
-                .message("Signed Up successfully")
+                .message("Login successful")
                 .data(Response.Data.builder()
-                        .id(user.getId())
-                        .name(user.getUserName())
-                        .email(user.getEmail())
+                        .email(loginResponse.getEmail())
+                        .roles(loginResponse.getRoles())
+                        .token(loginResponse.getToken())
+                        .expiresIn(loginResponse.getExpiresIn())
                         .build())
                 .build();
     }
