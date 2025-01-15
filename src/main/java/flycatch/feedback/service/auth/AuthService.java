@@ -41,7 +41,7 @@ public class AuthService implements AuthServiceInterface{
 
         if (doesUserExistByEmail(request.getEmail())) {
             log.error("User already registered with email: {}", request.getEmail());
-            throw new AppException("User already registered with email");
+            throw new AppException("User already registered...");
         }
 
         User user = new User();
@@ -58,7 +58,7 @@ public class AuthService implements AuthServiceInterface{
             return savedUser;
         } catch (Exception e) {
             log.error("Error occurred while registering user with email: {}", request.getEmail(), e);
-            throw new AppException("Error occurred while registering the user");
+            throw new AppException("Error occurred while registering...");
         }
     }
 
@@ -85,20 +85,21 @@ public class AuthService implements AuthServiceInterface{
                     .build();
         } catch (Exception e) {
             log.error("Authentication failed for user with email: {}", request.getEmail(), e);
-            throw new AppException("The request is invalid.Please check your input");
+            throw new AppException("Username or Password incorrect");
         }
     }
 
     public void forgotPassword(String email){
         log.info("Processing forgot password for email: {}",email);
 
+        User user;
         try {
-            User user = findUserByEmail(email);
+                user = findUserByEmail(email);
+            }catch (RuntimeException  e) {
+                log.error("User with email {} not found: {}", email, e.getMessage());
+                throw new AppException("User with the provided email does not exist...");
+            }
             String token = UUID.randomUUID().toString();
-            user.setResetToken(token);
-            user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
-            userRepository.save(user);
-
             String resetLink = "http://localhost:8080/auth/change-password?token="+token;
             emailService.sendEmail(
                     user.getEmail(),
@@ -106,13 +107,6 @@ public class AuthService implements AuthServiceInterface{
                     "Click the link below to rest your password:\n"+resetLink
             );
             log.info("Password rest email sent to: {}",email);
-        }catch (NoSuchElementException  e) {
-            log.error("User with email {} not found: {}", email, e.getMessage());
-            throw new AppException("User with the provided email does not exist.");
-        } catch (Exception e) {
-            log.error("Unexpected error during forgot password process for email {}: {}", email, e.getMessage());
-            throw new AppException("An unexpected error occurred while processing the forgot password request.");
-        }
     }
 
     public void changePassword(String token, String newPassword, String confirmPassword){
@@ -152,7 +146,7 @@ public class AuthService implements AuthServiceInterface{
             User user = findUserByEmail(email);
             if (user == null) {
                 log.error("User not found with email: {}", email);
-                throw new AppException("User not found.");
+                throw new AppException("User not found...");
             }
             if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
                 log.error("Old password is incorrect for user: {}", email);
@@ -161,7 +155,7 @@ public class AuthService implements AuthServiceInterface{
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
             log.info("Password updated successfully for user: {}", email);
-        }catch (NoSuchElementException e) {
+        }catch (RuntimeException e) {
             log.error("No user found with email: {}", email, e);
             throw new AppException("User not found.");
         } catch (Exception e) {

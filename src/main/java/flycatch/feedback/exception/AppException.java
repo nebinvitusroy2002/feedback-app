@@ -1,10 +1,10 @@
 package flycatch.feedback.exception;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
+@Getter
 public class AppException extends RuntimeException{
-    public AppException(String message){
-        super(message);
-    }
+   private final String message;
 }

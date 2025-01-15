@@ -4,12 +4,10 @@ import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
 import flycatch.feedback.dto.ChangePasswordRequest;
 import flycatch.feedback.dto.ResetPasswordRequest;
-import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.response.LoginResponse;
 import flycatch.feedback.response.Response;
 import flycatch.feedback.service.auth.AuthService;
-import flycatch.feedback.service.jwt.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
