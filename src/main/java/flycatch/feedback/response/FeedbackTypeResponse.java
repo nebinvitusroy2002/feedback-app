@@ -20,6 +20,5 @@ public class FeedbackTypeResponse {
     public static class Data {
         private String message;
         private List<FeedbackTypesDto> feedbackTypes;
-        private FeedbackTypesDto feedbackType;
     }
 }

@@ -1,5 +1,6 @@
 package flycatch.feedback.dto;
 
+import jakarta.persistence.Id;
 import lombok.*;
 
 @Getter
