@@ -1,12 +1,9 @@
 package flycatch.feedback.controller;
 
-import flycatch.feedback.dto.LoginRequest;
-import flycatch.feedback.dto.RegisterRequest;
-import flycatch.feedback.dto.ChangePasswordRequest;
-import flycatch.feedback.dto.ResetPasswordRequest;
-import flycatch.feedback.model.User;
+import flycatch.feedback.dto.*;
 import flycatch.feedback.response.LoginResponse;
 import flycatch.feedback.response.Response;
+import flycatch.feedback.response.SignUpResponse;
 import flycatch.feedback.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +23,9 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signUp")
-    public ResponseEntity<User> register(@RequestBody @Valid RegisterRequest request){
-        return ResponseEntity.ok(authService.registerUser(request));
+    public ResponseEntity<SignUpResponse> registerUser(@RequestBody RegisterRequest request) {
+        SignUpResponse userResponse = authService.registerUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
 
     @PostMapping("/login")

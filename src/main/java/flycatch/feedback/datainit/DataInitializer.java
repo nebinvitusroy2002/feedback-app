@@ -8,6 +8,9 @@ import flycatch.feedback.repository.RoleRepository;
 import flycatch.feedback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,14 +71,16 @@ public class DataInitializer {
                 "Flight Attendance Performance"
         );
 
-        feedbackTypeNames.forEach(typeName ->{
-            if (feedBackTypesRepository.findByName(typeName).isEmpty()){
+        feedbackTypeNames.forEach(typeName -> {
+            Pageable pageable = PageRequest.of(0, 1);
+            Page<FeedbackTypes> feedbackTypesPage = feedBackTypesRepository.findByName(typeName, pageable);
+            if (feedbackTypesPage.isEmpty()) {
                 FeedbackTypes feedbackTypes = new FeedbackTypes();
                 feedbackTypes.setName(typeName);
                 feedBackTypesRepository.save(feedbackTypes);
-                log.info("Feedback type '{}' created.",typeName);
-            }else {
-                log.info("Feedback type '{}' already exists.",typeName);
+                log.info("Feedback type '{}' created.", typeName);
+            } else {
+                log.info("Feedback type '{}' already exists.", typeName);
             }
         });
     }

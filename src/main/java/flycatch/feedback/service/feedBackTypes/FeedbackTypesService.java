@@ -7,9 +7,9 @@ import flycatch.feedback.repository.FeedBackTypesRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,18 +51,35 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
     }
 
     @Override
-    public List<FeedbackTypes> getAllFeedbackTypes() {
-        log.info("Fetching all feedback types");
+    public Page<FeedbackTypes> getAllFeedbackTypes(Pageable pageable) {
+        log.info("Fetching all feedback types with pagination: page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
         try {
-            return feedBackTypesRepository.findAll();
+            return feedBackTypesRepository.findAll(pageable);
         } catch (DataAccessException ex) {
-            log.error("Database error while fetching all feedback types: {}", ex.getMessage());
+            log.error("Database error while fetching feedback types with pagination: {}", ex.getMessage());
             throw new AppException("Unable to fetch feedback types. Please try again later.");
         } catch (Exception ex) {
-            log.error("Unexpected error while fetching all feedback types: {}", ex.getMessage());
+            log.error("Unexpected error while fetching feedback types with pagination: {}", ex.getMessage());
             throw new AppException("An unexpected error occurred. Please try again later.");
         }
     }
+
+    @Override
+    public Page<FeedbackTypes> searchFeedbackTypesByName(String search, Pageable pageable) {
+        log.info("Searching feedback types with name: {}", search);
+        try {
+            Page<FeedbackTypes> feedbackTypesPage = feedBackTypesRepository.findByName(search, pageable);
+            if (feedbackTypesPage.isEmpty()) {
+                throw new AppException("No feedback types found for the given search term.");
+            }
+
+            return feedbackTypesPage;
+        } catch (DataAccessException ex) {
+            log.error("Database error while searching feedback types: {}", ex.getMessage());
+            throw new AppException("Unable to search feedback types. Please try again later.");
+        }
+    }
+
 
     @Override
     public FeedbackTypes updateFeedbackType(long id, FeedbackTypesDto feedbackTypesDto) {
