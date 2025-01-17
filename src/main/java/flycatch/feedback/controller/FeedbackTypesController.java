@@ -27,38 +27,32 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(feedbackTypesDto);
         FeedbackTypesDto createdDto = convertToDto(feedbackType);
 
-        FeedbackTypeResponse response = FeedbackTypeResponse.builder()
-                .timestamp(java.time.LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Feedback type created successfully")
-                .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(createdDto))
-                        .build())
-                .build();
+        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+                HttpStatus.CREATED,
+                "Feedback type created successfully",
+                List.of(createdDto),
+                null,
+                null
+        );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> getFeedbackTypeById(@PathVariable long id) {
         FeedbackTypes feedbackType = feedbackTypesService.getFeedbackTypeById(id);
         FeedbackTypesDto feedbackTypeDto = convertToDto(feedbackType);
 
-        FeedbackTypeResponse response = FeedbackTypeResponse.builder()
-                .timestamp(java.time.LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Feedback type retrieved successfully")
-                .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(feedbackTypeDto))
-                        .build())
-                .build();
+        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+                HttpStatus.OK,
+                "Feedback type retrieved successfully",
+                List.of(feedbackTypeDto),
+                null,
+                null
+        );
 
         return ResponseEntity.ok(response);
     }
-
 
     @GetMapping
     public ResponseEntity<FeedbackTypeResponse> getAllFeedbackTypes(
@@ -75,21 +69,16 @@ public class FeedbackTypesController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        FeedbackTypeResponse response = FeedbackTypeResponse.builder()
-                .timestamp(java.time.LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Feedback types retrieved successfully.")
-                .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(feedbackTypesDtos)
-                        .build())
-                .totalPages(feedbackTypesPage.getTotalPages())
-                .totalElements(feedbackTypesPage.getTotalElements())
-                .build();
+        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+                HttpStatus.OK,
+                "Feedback types retrieved successfully.",
+                feedbackTypesDtos,
+                feedbackTypesPage.getTotalPages(),
+                feedbackTypesPage.getTotalElements()
+        );
 
         return ResponseEntity.ok(response);
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> updateFeedbackType(
@@ -99,34 +88,54 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, feedbackTypesDto);
         FeedbackTypesDto updatedDto = convertToDto(feedbackType);
 
-        FeedbackTypeResponse response = FeedbackTypeResponse.builder()
-                .timestamp(java.time.LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Feedback type updated successfully")
-                .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(updatedDto))
-                        .build())
-                .build();
+        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+                HttpStatus.OK,
+                "Feedback type updated successfully",
+                List.of(updatedDto),
+                null,
+                null
+        );
 
         return ResponseEntity.ok(response);
     }
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> deleteFeedbackType(@PathVariable long id) {
         feedbackTypesService.deleteFeedbackType(id);
-        FeedbackTypeResponse response = FeedbackTypeResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Feedback Type deleted successfully.")
-                .build();
-        return ResponseEntity.ok(response);
+        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+                HttpStatus.OK,
+                "Feedback Type deleted successfully.",
+                null,
+                null,
+                null
+        );
 
+        return ResponseEntity.ok(response);
     }
 
     private FeedbackTypesDto convertToDto(FeedbackTypes feedbackTypes) {
         return new FeedbackTypesDto(feedbackTypes.getId(), feedbackTypes.getName());
+    }
+
+    private FeedbackTypeResponse buildFeedbackTypeResponse(
+            HttpStatus status,
+            String message,
+            List<FeedbackTypesDto> feedbackTypesDtos,
+            Integer totalPages,
+            Long totalElements) {
+
+        FeedbackTypeResponse.Data data = FeedbackTypeResponse.Data.builder()
+                .feedbackTypes(feedbackTypesDtos)
+                .build();
+
+        return FeedbackTypeResponse.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .code(status.value())
+                .status(true)
+                .message(message)
+                .data(data)
+                .totalPages(totalPages != null ? totalPages : 0)
+                .totalElements(totalElements != null ? totalElements : 0L)
+                .build();
     }
 }

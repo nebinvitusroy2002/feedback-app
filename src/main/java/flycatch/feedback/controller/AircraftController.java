@@ -27,36 +27,27 @@ public class AircraftController {
         Aircraft aircraft = aircraftService.createAircraft(aircraftDto);
         AircraftDto createdDto = convertToDto(aircraft);
 
-        AircraftResponse response = AircraftResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.CREATED.value())
-                .status(true)
-                .message("Aircraft created successfully")
-                .data(AircraftResponse.Data.builder()
-                        .aircrafts(List.of(createdDto))
-                        .build())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(buildAircraftResponse(
+                HttpStatus.CREATED,
+                "Aircraft created successfully",
+                List.of(createdDto),
+                null,
+                null
+        ));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<AircraftResponse> getAircraftById(@PathVariable Long id) {
-
         Aircraft aircraft = aircraftService.getAircraftById(id);
         AircraftDto aircraftDto = convertToDto(aircraft);
 
-        AircraftResponse response = AircraftResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Aircraft retrieved successfully")
-                .data(AircraftResponse.Data.builder()
-                        .aircrafts(List.of(aircraftDto))
-                        .build())
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAircraftResponse(
+                HttpStatus.OK,
+                "Aircraft retrieved successfully",
+                List.of(aircraftDto),
+                null,
+                null
+        ));
     }
 
     @GetMapping
@@ -72,19 +63,13 @@ public class AircraftController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        AircraftResponse response = AircraftResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Aircrafts retrieved successfully.")
-                .data(AircraftResponse.Data.builder()
-                        .aircrafts(aircraftDtos)
-                        .totalPages(aircraftPage.getTotalPages())
-                        .totalElements(aircraftPage.getTotalElements())
-                        .build())
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAircraftResponse(
+                HttpStatus.OK,
+                "Aircrafts retrieved successfully.",
+                aircraftDtos,
+                aircraftPage.getTotalPages(),
+                aircraftPage.getTotalElements()
+        ));
     }
 
     @PutMapping("/{id}")
@@ -94,34 +79,51 @@ public class AircraftController {
         Aircraft aircraft = aircraftService.updateAircraft(id, aircraftDto);
         AircraftDto updatedDto = convertToDto(aircraft);
 
-        AircraftResponse response = AircraftResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Aircraft updated successfully")
-                .data(AircraftResponse.Data.builder()
-                        .aircrafts(List.of(updatedDto))
-                        .build())
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAircraftResponse(
+                HttpStatus.OK,
+                "Aircraft updated successfully",
+                List.of(updatedDto),
+                null,
+                null
+        ));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<AircraftResponse> deleteAircraft(@PathVariable Long id) {
         aircraftService.deleteAircraft(id);
 
-        AircraftResponse response = AircraftResponse.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .code(HttpStatus.OK.value())
-                .status(true)
-                .message("Aircraft deleted successfully")
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAircraftResponse(
+                HttpStatus.OK,
+                "Aircraft deleted successfully",
+                null,
+                null,
+                null
+        ));
     }
 
     private AircraftDto convertToDto(Aircraft aircraft) {
         return new AircraftDto(aircraft.getId(), aircraft.getName(), aircraft.getType());
+    }
+
+    private AircraftResponse buildAircraftResponse(
+            HttpStatus status,
+            String message,
+            List<AircraftDto> aircraftDtos,
+            Integer totalPages,
+            Long totalElements) {
+
+        AircraftResponse.Data data = AircraftResponse.Data.builder()
+                .aircrafts(aircraftDtos)
+                .build();
+
+        return AircraftResponse.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .code(status.value())
+                .status(true)
+                .message(message)
+                .data(data)
+                .totalPages(totalPages != null ? totalPages : 0)
+                .totalElements(totalElements != null ? totalElements : 0L)
+                .build();
     }
 }

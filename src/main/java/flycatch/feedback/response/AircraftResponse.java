@@ -16,13 +16,14 @@ public class AircraftResponse {
     private boolean status;
     private String message;
     private Data data;
+    private int totalPages;
+    private long totalElements;
+
 
     @Builder
     @Getter
     @Setter
     public static class Data {
         private List<AircraftDto> aircrafts;
-        private long totalElements;
-        private int totalPages;
     }
 }
