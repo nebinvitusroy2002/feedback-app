@@ -1,6 +1,7 @@
 package flycatch.feedback.config;
 
 
+import flycatch.feedback.filter.JwtAuthenticationFilter;
 import flycatch.feedback.service.userDetails.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

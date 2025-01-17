@@ -1,14 +1,12 @@
 package flycatch.feedback.controller;
 
 import flycatch.feedback.dto.FeedbackTypesDto;
-import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.response.FeedbackTypeResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +33,7 @@ public class FeedbackTypesController {
                 .status(true)
                 .message("Feedback type created successfully")
                 .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(createdDto)) // Wrapping in a list
+                        .feedbackTypes(List.of(createdDto))
                         .build())
                 .build();
 
@@ -54,7 +52,7 @@ public class FeedbackTypesController {
                 .status(true)
                 .message("Feedback type retrieved successfully")
                 .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(feedbackTypeDto)) // Wrapping in a list
+                        .feedbackTypes(List.of(feedbackTypeDto))
                         .build())
                 .build();
 
@@ -68,23 +66,11 @@ public class FeedbackTypesController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search) {
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<FeedbackTypes> feedbackTypesPage;
-
-        if (search != null && !search.isEmpty()) {
-            feedbackTypesPage = feedbackTypesService.searchFeedbackTypesByName(search, pageable);
-        } else {
-            feedbackTypesPage = feedbackTypesService.getAllFeedbackTypes(pageable);
-        }
-        if (feedbackTypesPage.isEmpty()) {
-            throw new AppException("No feedback types found for the given search term.");
-        }
-
+        Page<FeedbackTypes> feedbackTypesPage = feedbackTypesService.searchFeedbackTypesByName(search, PageRequest.of(page, size));
 
         List<FeedbackTypesDto> feedbackTypesDtos = feedbackTypesPage.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
-
         FeedbackTypeResponse response = FeedbackTypeResponse.builder()
                 .timestamp(java.time.LocalDateTime.now().toString())
                 .code(HttpStatus.OK.value())
@@ -115,7 +101,7 @@ public class FeedbackTypesController {
                 .status(true)
                 .message("Feedback type updated successfully")
                 .data(FeedbackTypeResponse.Data.builder()
-                        .feedbackTypes(List.of(updatedDto)) // Wrapping the single DTO in a list
+                        .feedbackTypes(List.of(updatedDto))
                         .build())
                 .build();
 

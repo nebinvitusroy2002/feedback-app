@@ -4,11 +4,14 @@ import flycatch.feedback.dto.FeedbackTypesDto;
 import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.repository.FeedBackTypesRepository;
+import flycatch.feedback.specification.FeedbackTypesSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -51,28 +54,40 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
     }
 
     @Override
-    public Page<FeedbackTypes> getAllFeedbackTypes(Pageable pageable) {
+    public Page<FeedbackTypes> getAllFeedbackTypes(int page, int size, String search) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        if (search != null && !search.isEmpty()) {
+            return searchFeedbackTypesByName(search, pageable);
+        } else {
+            return getAllFeedbackTypes(pageable);
+        }
+    }
+    private Page<FeedbackTypes> getAllFeedbackTypes(Pageable pageable) {
         log.info("Fetching all feedback types with pagination: page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
         try {
             return feedBackTypesRepository.findAll(pageable);
         } catch (DataAccessException ex) {
-            log.error("Database error while fetching feedback types with pagination: {}", ex.getMessage());
+            log.error("Database error while fetching feedback types: {}", ex.getMessage());
             throw new AppException("Unable to fetch feedback types. Please try again later.");
-        } catch (Exception ex) {
-            log.error("Unexpected error while fetching feedback types with pagination: {}", ex.getMessage());
-            throw new AppException("An unexpected error occurred. Please try again later.");
         }
     }
+
 
     @Override
     public Page<FeedbackTypes> searchFeedbackTypesByName(String search, Pageable pageable) {
         log.info("Searching feedback types with name: {}", search);
+        if (search == null || search.trim().isEmpty()) {
+            log.warn("Search term is empty or null");
+            throw new AppException("Search term cannot be empty or null.");
+        }
         try {
-            Page<FeedbackTypes> feedbackTypesPage = feedBackTypesRepository.findByName(search, pageable);
-            if (feedbackTypesPage.isEmpty()) {
+            Specification<FeedbackTypes> spec = FeedbackTypesSpecification.hasNameEqual(search);
+            Page<FeedbackTypes> feedbackTypesPage = feedBackTypesRepository.findAll(spec, pageable);
+            if (feedbackTypesPage.getTotalElements() == 0) {
+                log.warn("No feedback types found for search term: {}", search);
                 throw new AppException("No feedback types found for the given search term.");
             }
-
             return feedbackTypesPage;
         } catch (DataAccessException ex) {
             log.error("Database error while searching feedback types: {}", ex.getMessage());

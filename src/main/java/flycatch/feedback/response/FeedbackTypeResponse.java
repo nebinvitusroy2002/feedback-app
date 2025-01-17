@@ -22,7 +22,6 @@ public class FeedbackTypeResponse {
     @Getter
     @Builder
     public static class Data {
-        private String message;
         private List<FeedbackTypesDto> feedbackTypes;
     }
 }
