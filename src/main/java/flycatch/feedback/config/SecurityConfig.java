@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth-> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/feedback-types/**").authenticated()
+                        .requestMatchers("/aircrafts/**").authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
