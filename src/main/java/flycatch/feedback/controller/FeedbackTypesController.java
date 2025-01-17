@@ -64,18 +64,22 @@ public class FeedbackTypesController {
     public ResponseEntity<FeedbackTypeResponse> getAllFeedbackTypes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String name) {
 
-        Page<FeedbackTypes> feedbackTypesPage = feedbackTypesService.searchFeedbackTypesByName(search, PageRequest.of(page, size));
+        Page<FeedbackTypes> feedbackTypesPage = feedbackTypesService.getAllFeedbackTypes(
+                name,
+                PageRequest.of(page, size)
+        );
 
         List<FeedbackTypesDto> feedbackTypesDtos = feedbackTypesPage.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+
         FeedbackTypeResponse response = FeedbackTypeResponse.builder()
                 .timestamp(java.time.LocalDateTime.now().toString())
                 .code(HttpStatus.OK.value())
                 .status(true)
-                .message("Feedback types retrieved successfully")
+                .message("Feedback types retrieved successfully.")
                 .data(FeedbackTypeResponse.Data.builder()
                         .feedbackTypes(feedbackTypesDtos)
                         .build())
