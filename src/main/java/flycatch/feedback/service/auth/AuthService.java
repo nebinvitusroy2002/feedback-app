@@ -2,16 +2,19 @@ package flycatch.feedback.service.auth;
 
 import flycatch.feedback.dto.LoginRequest;
 import flycatch.feedback.dto.RegisterRequest;
+import flycatch.feedback.dto.UserDto;
 import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.Role;
 import flycatch.feedback.model.User;
 import flycatch.feedback.repository.RoleRepository;
 import flycatch.feedback.repository.UserRepository;
 import flycatch.feedback.response.LoginResponse;
+import flycatch.feedback.response.SignUpResponse;
 import flycatch.feedback.service.email.EmailService;
 import flycatch.feedback.service.jwt.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,31 +38,41 @@ public class AuthService implements AuthServiceInterface{
     private final JwtService jwtService;
 
 
-    public User registerUser(RegisterRequest request){
-
-        log.info("Attempting to register user with email: {}",request.getEmail());
-
+    public SignUpResponse registerUser(RegisterRequest request) {
         if (doesUserExistByEmail(request.getEmail())) {
-            log.error("User already registered with email: {}", request.getEmail());
-            throw new AppException("User already registered with email");
+            throw new AppException("User already registered...");
         }
-
         User user = new User();
         user.setUserName(request.getUserName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
         Role userRole = findRoleByName("USER");
         user.setRoles(List.of(userRole));
-
         try {
             User savedUser = userRepository.save(user);
-            log.info("User successfully registered with email: {}", savedUser.getEmail());
-            return savedUser;
+            List<String> roles = savedUser.getRoles().stream()
+                    .map(Role::getName)
+                    .toList();
+            UserDto userDto = new UserDto(savedUser.getId(), savedUser.getUserName(), savedUser.getEmail(), roles);
+            return buildUserResponse(userDto);
         } catch (Exception e) {
-            log.error("Error occurred while registering user with email: {}", request.getEmail(), e);
-            throw new AppException("Error occurred while registering the user");
+            throw new AppException("Error occurred while registering user...");
         }
+    }
+
+    private SignUpResponse buildUserResponse(UserDto userDto) {
+        return SignUpResponse.builder()
+                .timestamp(java.time.LocalDateTime.now().toString())
+                .code(HttpStatus.CREATED.value())
+                .status(true)
+                .message("User signup successful")
+                .data(SignUpResponse.Data.builder()
+                        .id(userDto.getId())
+                        .userName(userDto.getUserName())
+                        .email(userDto.getEmail())
+                        .roles(userDto.getRoles())
+                        .build())
+                .build();
     }
 
     public LoginResponse loginUser(LoginRequest request) {
@@ -85,20 +98,21 @@ public class AuthService implements AuthServiceInterface{
                     .build();
         } catch (Exception e) {
             log.error("Authentication failed for user with email: {}", request.getEmail(), e);
-            throw new AppException("The request is invalid.Please check your input");
+            throw new AppException("Username or Password incorrect");
         }
     }
 
     public void forgotPassword(String email){
         log.info("Processing forgot password for email: {}",email);
 
+        User user;
         try {
-            User user = findUserByEmail(email);
+                user = findUserByEmail(email);
+            }catch (RuntimeException  e) {
+                log.error("User with email {} not found: {}", email, e.getMessage());
+                throw new AppException("User with the provided email does not exist...");
+            }
             String token = UUID.randomUUID().toString();
-            user.setResetToken(token);
-            user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
-            userRepository.save(user);
-
             String resetLink = "http://localhost:8080/auth/change-password?token="+token;
             emailService.sendEmail(
                     user.getEmail(),
@@ -106,13 +120,6 @@ public class AuthService implements AuthServiceInterface{
                     "Click the link below to rest your password:\n"+resetLink
             );
             log.info("Password rest email sent to: {}",email);
-        }catch (NoSuchElementException  e) {
-            log.error("User with email {} not found: {}", email, e.getMessage());
-            throw new AppException("User with the provided email does not exist.");
-        } catch (Exception e) {
-            log.error("Unexpected error during forgot password process for email {}: {}", email, e.getMessage());
-            throw new AppException("An unexpected error occurred while processing the forgot password request.");
-        }
     }
 
     public void changePassword(String token, String newPassword, String confirmPassword){
@@ -152,7 +159,7 @@ public class AuthService implements AuthServiceInterface{
             User user = findUserByEmail(email);
             if (user == null) {
                 log.error("User not found with email: {}", email);
-                throw new AppException("User not found.");
+                throw new AppException("User not found...");
             }
             if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
                 log.error("Old password is incorrect for user: {}", email);
@@ -161,7 +168,7 @@ public class AuthService implements AuthServiceInterface{
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepository.save(user);
             log.info("Password updated successfully for user: {}", email);
-        }catch (NoSuchElementException e) {
+        }catch (RuntimeException e) {
             log.error("No user found with email: {}", email, e);
             throw new AppException("User not found.");
         } catch (Exception e) {

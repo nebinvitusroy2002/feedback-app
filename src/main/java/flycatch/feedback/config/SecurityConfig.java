@@ -1,6 +1,7 @@
 package flycatch.feedback.config;
 
 
+import flycatch.feedback.filter.JwtAuthenticationFilter;
 import flycatch.feedback.service.userDetails.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -29,6 +30,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth-> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/feedback-types/**").authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
