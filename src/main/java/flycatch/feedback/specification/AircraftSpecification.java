@@ -4,7 +4,6 @@ import flycatch.feedback.model.Aircraft;
 import flycatch.feedback.search.SearchCriteria;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.*;
