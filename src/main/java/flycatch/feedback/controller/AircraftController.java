@@ -2,7 +2,8 @@ package flycatch.feedback.controller;
 
 import flycatch.feedback.dto.AircraftDto;
 import flycatch.feedback.model.Aircraft;
-import flycatch.feedback.response.AircraftResponse;
+import flycatch.feedback.response.aircraft.AircraftPagedResponse;
+import flycatch.feedback.response.aircraft.AircraftResponse;
 import flycatch.feedback.service.aircraft.AircraftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,9 +31,7 @@ public class AircraftController {
         return ResponseEntity.status(HttpStatus.CREATED).body(buildAircraftResponse(
                 HttpStatus.CREATED,
                 "Aircraft created successfully",
-                List.of(createdDto),
-                null,
-                null
+                List.of(createdDto)
         ));
     }
 
@@ -44,16 +43,14 @@ public class AircraftController {
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
                 "Aircraft retrieved successfully",
-                List.of(aircraftDto),
-                null,
-                null
+                List.of(aircraftDto)
         ));
     }
 
     @GetMapping
-    public ResponseEntity<AircraftResponse> getAllAircrafts(
-            @RequestParam(required = false) String name, // Optional search term for name
-            @RequestParam(required = false) String type, // Optional search term for type
+    public ResponseEntity<AircraftPagedResponse> getAllAircrafts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
@@ -63,9 +60,10 @@ public class AircraftController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(buildAircraftResponse(
-                HttpStatus.OK,
-                "Aircrafts retrieved successfully.",
+        String message = aircraftDtos.isEmpty() ? "No aircrafts found." : "Aircrafts retrieved successfully.";
+
+        return ResponseEntity.ok(buildPagedAircraftResponse(
+                message,
                 aircraftDtos,
                 aircraftPage.getTotalPages(),
                 aircraftPage.getTotalElements()
@@ -82,9 +80,7 @@ public class AircraftController {
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
                 "Aircraft updated successfully",
-                List.of(updatedDto),
-                null,
-                null
+                List.of(updatedDto)
         ));
     }
 
@@ -95,8 +91,6 @@ public class AircraftController {
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
                 "Aircraft deleted successfully",
-                null,
-                null,
                 null
         ));
     }
@@ -108,20 +102,37 @@ public class AircraftController {
     private AircraftResponse buildAircraftResponse(
             HttpStatus status,
             String message,
-            List<AircraftDto> aircraftDtos,
-            Integer totalPages,
-            Long totalElements) {
-
+            List<AircraftDto> aircraftDtos) {
         AircraftResponse.Data data = AircraftResponse.Data.builder()
                 .aircrafts(aircraftDtos)
                 .build();
-
-        return AircraftResponse.builder()
+        AircraftResponse.AircraftResponseBuilder responseBuilder = AircraftResponse.builder()
                 .timestamp(LocalDateTime.now().toString())
                 .code(status.value())
                 .status(true)
                 .message(message)
-                .data(data)
+                .data(data);
+        return responseBuilder.build();
+    }
+
+    private AircraftPagedResponse buildPagedAircraftResponse(
+            String message,
+            List<AircraftDto> aircraftDtos,
+            Integer totalPages,
+            Long totalElements) {
+
+        AircraftPagedResponse.Data data = AircraftPagedResponse.Data.builder()
+                .aircrafts(aircraftDtos)
                 .build();
+
+        AircraftPagedResponse.AircraftPagedResponseBuilder responseBuilder = AircraftPagedResponse.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .code(HttpStatus.OK.value())
+                .status(true)
+                .message(message)
+                .totalPages(totalPages)
+                .totalElements(totalElements)
+                .data(data);
+        return responseBuilder.build();
     }
 }
