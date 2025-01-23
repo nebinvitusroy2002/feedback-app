@@ -1,8 +1,9 @@
 package flycatch.feedback.controller;
 
-import flycatch.feedback.dto.FeedbackTypesDto;
+import flycatch.feedback.dto.*;
 import flycatch.feedback.model.FeedbackTypes;
-import flycatch.feedback.response.FeedbackTypeResponse;
+import flycatch.feedback.response.feedbacktypes.FeedbackTypeResponse;
+import flycatch.feedback.response.feedbacktypes.FeedbackTypesPagedResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,16 +24,14 @@ public class FeedbackTypesController {
     private final FeedbackTypesService feedbackTypesService;
 
     @PostMapping
-    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody FeedbackTypesDto feedbackTypesDto) {
-        FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(feedbackTypesDto);
+    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody CreateFeedbackTypeDto createFeedbackTypeDto) {
+        FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(createFeedbackTypeDto);
         FeedbackTypesDto createdDto = convertToDto(feedbackType);
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.CREATED,
-                "Feedback type created successfully",
-                List.of(createdDto),
-                null,
-                null
+                "Feedback type created successfully.",
+                List.of(createdDto)
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -45,17 +44,15 @@ public class FeedbackTypesController {
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type retrieved successfully",
-                List.of(feedbackTypeDto),
-                null,
-                null
+                "Feedback type retrieved successfully.",
+                List.of(feedbackTypeDto)
         );
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<FeedbackTypeResponse> getAllFeedbackTypes(
+    public ResponseEntity<FeedbackTypesPagedResponse> getAllFeedbackTypes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String name) {
@@ -69,9 +66,10 @@ public class FeedbackTypesController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        FeedbackTypeResponse response = buildFeedbackTypeResponse(
-                HttpStatus.OK,
-                "Feedback types retrieved successfully.",
+        String message = feedbackTypesDtos.isEmpty() ? "No feedback types found." : "Feedback types retrieved successfully.";
+
+        FeedbackTypesPagedResponse response = buildPagedFeedbackTypesResponse(
+                message,
                 feedbackTypesDtos,
                 feedbackTypesPage.getTotalPages(),
                 feedbackTypesPage.getTotalElements()
@@ -83,17 +81,15 @@ public class FeedbackTypesController {
     @PutMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> updateFeedbackType(
             @PathVariable long id,
-            @RequestBody FeedbackTypesDto feedbackTypesDto) {
+            @RequestBody UpdateFeedbackTypesDto updateFeedbackTypesDto) {
 
-        FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, feedbackTypesDto);
+        FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, updateFeedbackTypesDto);
         FeedbackTypesDto updatedDto = convertToDto(feedbackType);
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type updated successfully",
-                List.of(updatedDto),
-                null,
-                null
+                "Feedback type updated successfully.",
+                List.of(updatedDto)
         );
 
         return ResponseEntity.ok(response);
@@ -102,11 +98,10 @@ public class FeedbackTypesController {
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> deleteFeedbackType(@PathVariable long id) {
         feedbackTypesService.deleteFeedbackType(id);
+
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback Type deleted successfully.",
-                null,
-                null,
+                "Feedback type deleted successfully.",
                 null
         );
 
@@ -114,15 +109,16 @@ public class FeedbackTypesController {
     }
 
     private FeedbackTypesDto convertToDto(FeedbackTypes feedbackTypes) {
-        return new FeedbackTypesDto(feedbackTypes.getId(), feedbackTypes.getName());
+        List<EmailDto> emailsDto = feedbackTypes.getEmails().stream()
+                .map(email -> new EmailDto(email.getEmail()))
+                .collect(Collectors.toList());
+        return new FeedbackTypesDto(feedbackTypes.getId(), feedbackTypes.getName(), emailsDto);
     }
 
     private FeedbackTypeResponse buildFeedbackTypeResponse(
             HttpStatus status,
             String message,
-            List<FeedbackTypesDto> feedbackTypesDtos,
-            Integer totalPages,
-            Long totalElements) {
+            List<FeedbackTypesDto> feedbackTypesDtos) {
 
         FeedbackTypeResponse.Data data = FeedbackTypeResponse.Data.builder()
                 .feedbackTypes(feedbackTypesDtos)
@@ -134,8 +130,27 @@ public class FeedbackTypesController {
                 .status(true)
                 .message(message)
                 .data(data)
-                .totalPages(totalPages != null ? totalPages : 0)
-                .totalElements(totalElements != null ? totalElements : 0L)
+                .build();
+    }
+
+    private FeedbackTypesPagedResponse buildPagedFeedbackTypesResponse(
+            String message,
+            List<FeedbackTypesDto> feedbackTypesDtos,
+            Integer totalPages,
+            Long totalElements){
+
+        FeedbackTypesPagedResponse.Data data = FeedbackTypesPagedResponse.Data.builder()
+                .feedbackTypes(feedbackTypesDtos)
+                .build();
+
+        return FeedbackTypesPagedResponse.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .code(HttpStatus.OK.value())
+                .status(true)
+                .message(message)
+                .totalPages(totalPages)
+                .totalElements(totalElements)
+                .data(data)
                 .build();
     }
 }

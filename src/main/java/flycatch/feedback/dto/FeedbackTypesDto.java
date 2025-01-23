@@ -1,13 +1,15 @@
 package flycatch.feedback.dto;
 
-import jakarta.persistence.Id;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class FeedbackTypesDto {
-    private long id;
+    private Long id;
     private String name;
+    private List<EmailDto> emails;
 }

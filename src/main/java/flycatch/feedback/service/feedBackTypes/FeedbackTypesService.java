@@ -1,19 +1,24 @@
 package flycatch.feedback.service.feedBackTypes;
 
-import flycatch.feedback.dto.FeedbackTypesDto;
+import flycatch.feedback.dto.CreateFeedbackTypeDto;
+import flycatch.feedback.dto.EmailDto;
+import flycatch.feedback.dto.UpdateFeedbackTypesDto;
 import flycatch.feedback.exception.AppException;
+import flycatch.feedback.model.Email;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.repository.FeedBackTypesRepository;
 import flycatch.feedback.search.SearchCriteria;
 import flycatch.feedback.specification.FeedbackTypesSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +28,10 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
     private final FeedBackTypesRepository feedBackTypesRepository;
 
     @Override
-    public FeedbackTypes createFeedbackType(FeedbackTypesDto feedbackTypesDto) {
-        log.info("Creating a new feedback type: {}", feedbackTypesDto.getName());
+    public FeedbackTypes createFeedbackType(CreateFeedbackTypeDto createFeedbackTypeDto) {
+        log.info("Creating a new feedback type: {}", createFeedbackTypeDto.getName());
         FeedbackTypes feedbackTypes = new FeedbackTypes();
-        feedbackTypes.setId(feedbackTypesDto.getId());
-        feedbackTypes.setName(feedbackTypesDto.getName());
+        feedbackTypes.setName(createFeedbackTypeDto.getName());
         try {
             return feedBackTypesRepository.save(feedbackTypes);
         }catch (Exception ex) {
@@ -69,18 +73,34 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
 
 
     @Override
-    public FeedbackTypes updateFeedbackType(long id, FeedbackTypesDto feedbackTypesDto) {
+    @Transactional
+    public FeedbackTypes updateFeedbackType(long id, UpdateFeedbackTypesDto updateFeedbackTypesDto) {
         log.info("Updating feedback type with id: {}", id);
-        FeedbackTypes feedbackTypes = feedBackTypesRepository.findById(id)
+
+        FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
                 .orElseThrow(() -> new AppException("Feedback type not found with id: " + id));
-        feedbackTypes.setName(feedbackTypesDto.getName());
+
+        feedbackType.setName(updateFeedbackTypesDto.getName());
+        if(updateFeedbackTypesDto.getEmails()!=null && !updateFeedbackTypesDto.getEmails().isEmpty()){
+            log.info("not empty");
+            List<Email> emailList = new ArrayList<>();
+        for(EmailDto  dto: updateFeedbackTypesDto.getEmails()) {
+            emailList.add(Email.builder()
+                    .email(dto.getEmail())
+                    .feedbackType(feedbackType)
+                    .build());
+        }
+            feedbackType.setEmails(emailList);
+        }
+
         try {
-            return feedBackTypesRepository.save(feedbackTypes);
-        }catch (Exception ex) {
-            log.error("Unexpected error while updating feedback type: {}", ex.getMessage());
-            throw new AppException("An unexpected error occurred while updating feedback type. Please try again later.");
+            return feedBackTypesRepository.save(feedbackType);
+        } catch (Exception ex) {
+            log.error("Error occurred while updating feedback type: {}", ex.getMessage(), ex);
+            throw new AppException("Failed to update feedback type: " + ex.getMessage());
         }
     }
+
 
     @Override
     public void deleteFeedbackType(long id) {

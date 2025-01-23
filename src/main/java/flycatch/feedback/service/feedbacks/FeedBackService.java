@@ -3,11 +3,13 @@ package flycatch.feedback.service.feedbacks;
 import flycatch.feedback.dto.FeedBackDto;
 import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.Aircraft;
+import flycatch.feedback.model.Email;
 import flycatch.feedback.model.FeedBack;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.repository.FeedBackRepository;
 import flycatch.feedback.search.SearchCriteria;
 import flycatch.feedback.service.aircraft.AircraftService;
+import flycatch.feedback.service.email.EmailService;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import flycatch.feedback.specification.FeedbackSpecification;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +19,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class FeedBackService {
+public class FeedBackService implements FeedbackServiceInterface{
 
     private final FeedbackTypesService feedbackTypesService;
     private final AircraftService aircraftService;
     private final FeedBackRepository feedBackRepository;
+    private final EmailService emailService;
 
     public FeedBack createFeedback(FeedBackDto feedBackDto){
         log.info("Creating new feedback for aircraft: {}",feedBackDto.getAircraftId());
@@ -37,12 +43,30 @@ public class FeedBackService {
         feedBack.setFeedbackType(feedbackTypes);
         feedBack.setAircraft(aircraft);
 
+        FeedBack savedFeedback;
         try {
-            return feedBackRepository.save(feedBack);
+            savedFeedback = feedBackRepository.save(feedBack);
         }catch (Exception e){
             log.error("Error while creating feedback: {}",e.getMessage());
             throw new AppException("An unexpected error occurred while creating feedback. Please try again later.");
         }
+        List<Email> emails = savedFeedback.getFeedbackType().getEmails();
+        if (emails != null && !emails.isEmpty()) {
+            List<String> emailAddresses = emails.stream()
+                    .map(Email::getEmail)
+                    .collect(Collectors.toList());
+
+            try {
+                emailService.sendNotification(savedFeedback.getFeedbackText(), emailAddresses);
+                log.info("Email notifications sent successfully for feedback id: {}", savedFeedback.getId());
+            } catch (Exception e) {
+                log.error("Error while sending email notifications: {}", e.getMessage(), e);
+                throw new AppException("Feedback created, but email notifications could not be sent.");
+            }
+        } else {
+            log.warn("No email addresses found for feedback type: {}", feedbackTypes.getId());
+        }
+        return savedFeedback;
     }
 
     public FeedBack getFeedbackById(long id){
@@ -99,10 +123,9 @@ public class FeedBackService {
         }
     }
 
-    public void deleteFeedBack(long id){
-        log.info("Deleting feedback with id: {}",id);
-        feedBackRepository.findById(id)
-                .orElseThrow(()->new AppException("Feedback not found with id: "+id));
-        feedBackRepository.deleteById(id);
+    public void deleteByAircraftId(Long aircraftId) {
+        log.info("Deleting feedbacks associated with aircraft id: {}", aircraftId);
+        feedBackRepository.findById(aircraftId);
+        log.info("Feedbacks deleted successfully for aircraft id: {}", aircraftId);
     }
 }

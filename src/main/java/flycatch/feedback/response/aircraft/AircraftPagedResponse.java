@@ -1,6 +1,6 @@
-package flycatch.feedback.response;
+package flycatch.feedback.response.aircraft;
 
-import flycatch.feedback.dto.FeedbackTypesDto;
+import flycatch.feedback.dto.AircraftDto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,18 +10,19 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class FeedbackTypeResponse {
+public class AircraftPagedResponse {
     private String timestamp;
     private int code;
     private boolean status;
     private String message;
     private Data data;
-    private int totalPages;
-    private long totalElements;
+    private Integer totalPages;
+    private Long totalElements;
 
-    @Getter
     @Builder
+    @Getter
+    @Setter
     public static class Data {
-        private List<FeedbackTypesDto> feedbackTypes;
+        private List<AircraftDto> aircrafts;
     }
 }

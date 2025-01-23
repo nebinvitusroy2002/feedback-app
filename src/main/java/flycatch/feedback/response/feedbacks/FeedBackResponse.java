@@ -1,4 +1,4 @@
-package flycatch.feedback.response;
+package flycatch.feedback.response.feedbacks;
 
 import flycatch.feedback.dto.FeedBackDto;
 import lombok.Builder;
@@ -16,8 +16,6 @@ public class FeedBackResponse {
     private boolean status;
     private String message;
     private Data data;
-    private int totalPages;
-    private long totalElements;
 
     @Builder
     @Getter

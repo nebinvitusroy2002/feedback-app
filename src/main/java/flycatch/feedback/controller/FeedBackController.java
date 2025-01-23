@@ -2,7 +2,8 @@ package flycatch.feedback.controller;
 
 import flycatch.feedback.dto.FeedBackDto;
 import flycatch.feedback.model.FeedBack;
-import flycatch.feedback.response.FeedBackResponse;
+import flycatch.feedback.response.feedbacks.FeedBackResponse;
+import flycatch.feedback.response.feedbacks.FeedbackPagedResponse;
 import flycatch.feedback.service.feedbacks.FeedBackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,9 +31,7 @@ public class FeedBackController {
         return ResponseEntity.status(HttpStatus.CREATED).body(buildFeedBackResponse(
                 HttpStatus.CREATED,
                 "Feedback created successfully",
-                List.of(createdDto),
-                null,
-                null
+                List.of(createdDto)
         ));
     }
 
@@ -44,14 +43,12 @@ public class FeedBackController {
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
                 "Feedback retrieved successfully",
-                List.of(feedBackDto),
-                null,
-                null
+                List.of(feedBackDto)
         ));
     }
 
     @GetMapping
-    public ResponseEntity<FeedBackResponse> getAllFeedbacks(
+    public ResponseEntity<FeedbackPagedResponse> getAllFeedbacks(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer feedbackType,
             @RequestParam(defaultValue = "0") int page,
@@ -63,9 +60,10 @@ public class FeedBackController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(buildFeedBackResponse(
-                HttpStatus.OK,
-                "Feedbacks retrieved successfully.",
+        String message = feedbackDtos.isEmpty() ? "No feedbacks found." : "Feedbacks retrieved successfully.";
+
+        return ResponseEntity.ok(buildPagedFeedBackResponse(
+                message,
                 feedbackDtos,
                 feedbackPage.getTotalPages(),
                 feedbackPage.getTotalElements()
@@ -82,21 +80,17 @@ public class FeedBackController {
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
                 "Feedback updated successfully",
-                List.of(updatedDto),
-                null,
-                null
+                List.of(updatedDto)
         ));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedBackResponse> deleteFeedback(@PathVariable Long id) {
-        feedBackService.deleteFeedBack(id);
+        feedBackService.deleteByAircraftId(id);
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
                 "Feedback deleted successfully",
-                null,
-                null,
                 null
         ));
     }
@@ -113,9 +107,7 @@ public class FeedBackController {
     private FeedBackResponse buildFeedBackResponse(
             HttpStatus status,
             String message,
-            List<FeedBackDto> feedbackDtos,
-            Integer totalPages,
-            Long totalElements) {
+            List<FeedBackDto> feedbackDtos){
 
         FeedBackResponse.Data data = FeedBackResponse.Data.builder()
                 .feedbacks(feedbackDtos)
@@ -127,8 +119,27 @@ public class FeedBackController {
                 .status(true)
                 .message(message)
                 .data(data)
-                .totalPages(totalPages != null ? totalPages : 0)
-                .totalElements(totalElements != null ? totalElements : 0L)
+                .build();
+    }
+
+    private FeedbackPagedResponse buildPagedFeedBackResponse(
+            String message,
+            List<FeedBackDto> feedbackDtos,
+            Integer totalPages,
+            Long totalElements){
+
+        FeedbackPagedResponse.Data data = FeedbackPagedResponse.Data.builder()
+                .feedbacks(feedbackDtos)
+                .build();
+
+        return FeedbackPagedResponse.builder()
+                .timestamp(LocalDateTime.now().toString())
+                .code(HttpStatus.OK.value())
+                .status(true)
+                .message(message)
+                .totalPages(totalPages)
+                .totalElements(totalElements)
+                .data(data)
                 .build();
     }
 }
