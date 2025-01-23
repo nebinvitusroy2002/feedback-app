@@ -122,8 +122,6 @@ public class AircraftController {
                 .status(true)
                 .message(message)
                 .data(data)
-                .totalPages(totalPages != null ? totalPages : 0)
-                .totalElements(totalElements != null ? totalElements : 0L)
                 .build();
     }
 }

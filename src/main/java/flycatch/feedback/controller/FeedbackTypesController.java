@@ -1,5 +1,6 @@
 package flycatch.feedback.controller;
 
+import flycatch.feedback.dto.EmailDto;
 import flycatch.feedback.dto.FeedbackTypesDto;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.response.FeedbackTypeResponse;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -114,7 +116,10 @@ public class FeedbackTypesController {
     }
 
     private FeedbackTypesDto convertToDto(FeedbackTypes feedbackTypes) {
-        return new FeedbackTypesDto(feedbackTypes.getId(), feedbackTypes.getName());
+        List<EmailDto> emailsDto = feedbackTypes.getEmails().stream()
+                .map(email -> new EmailDto(email.getEmail()))
+                .collect(Collectors.toList());
+        return new FeedbackTypesDto(feedbackTypes.getId(), feedbackTypes.getName(), emailsDto);
     }
 
     private FeedbackTypeResponse buildFeedbackTypeResponse(
@@ -134,8 +139,6 @@ public class FeedbackTypesController {
                 .status(true)
                 .message(message)
                 .data(data)
-                .totalPages(totalPages != null ? totalPages : 0)
-                .totalElements(totalElements != null ? totalElements : 0L)
                 .build();
     }
 }

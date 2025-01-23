@@ -84,5 +84,6 @@ public class AircraftService implements AircraftServiceInterface{
         aircraftRepository.findById(id)
                 .orElseThrow(() -> new AppException("Aircraft not found with id: " + id));
         aircraftRepository.deleteById(id);
+        log.info("Aircraft deleted successfully with id: {}", id);
     }
 }

@@ -16,8 +16,6 @@ public class AircraftResponse {
     private boolean status;
     private String message;
     private Data data;
-    private int totalPages;
-    private long totalElements;
 
 
     @Builder

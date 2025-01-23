@@ -90,7 +90,7 @@ public class FeedBackController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedBackResponse> deleteFeedback(@PathVariable Long id) {
-        feedBackService.deleteFeedBack(id);
+        feedBackService.deleteByAircraftId(id);
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
@@ -127,8 +127,6 @@ public class FeedBackController {
                 .status(true)
                 .message(message)
                 .data(data)
-                .totalPages(totalPages != null ? totalPages : 0)
-                .totalElements(totalElements != null ? totalElements : 0L)
                 .build();
     }
 }

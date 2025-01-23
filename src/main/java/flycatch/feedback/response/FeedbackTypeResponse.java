@@ -16,8 +16,6 @@ public class FeedbackTypeResponse {
     private boolean status;
     private String message;
     private Data data;
-    private int totalPages;
-    private long totalElements;
 
     @Getter
     @Builder
