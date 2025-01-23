@@ -1,7 +1,9 @@
 package flycatch.feedback.controller;
 
+import flycatch.feedback.dto.CreateFeedbackTypeDto;
 import flycatch.feedback.dto.EmailDto;
 import flycatch.feedback.dto.FeedbackTypesDto;
+import flycatch.feedback.dto.UpdateFeedbackTypesDto;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.response.FeedbackTypeResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
@@ -13,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,13 +26,13 @@ public class FeedbackTypesController {
     private final FeedbackTypesService feedbackTypesService;
 
     @PostMapping
-    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody FeedbackTypesDto feedbackTypesDto) {
-        FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(feedbackTypesDto);
+    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody CreateFeedbackTypeDto createFeedbackTypeDto) {
+        FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(createFeedbackTypeDto);
         FeedbackTypesDto createdDto = convertToDto(feedbackType);
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.CREATED,
-                "Feedback type created successfully",
+                "Feedback type created successfully.",
                 List.of(createdDto),
                 null,
                 null
@@ -47,7 +48,7 @@ public class FeedbackTypesController {
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type retrieved successfully",
+                "Feedback type retrieved successfully.",
                 List.of(feedbackTypeDto),
                 null,
                 null
@@ -85,14 +86,14 @@ public class FeedbackTypesController {
     @PutMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> updateFeedbackType(
             @PathVariable long id,
-            @RequestBody FeedbackTypesDto feedbackTypesDto) {
+            @RequestBody UpdateFeedbackTypesDto updateFeedbackTypesDto) {
 
-        FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, feedbackTypesDto);
+        FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, updateFeedbackTypesDto);
         FeedbackTypesDto updatedDto = convertToDto(feedbackType);
 
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type updated successfully",
+                "Feedback type updated successfully.",
                 List.of(updatedDto),
                 null,
                 null
@@ -104,9 +105,10 @@ public class FeedbackTypesController {
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> deleteFeedbackType(@PathVariable long id) {
         feedbackTypesService.deleteFeedbackType(id);
+
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback Type deleted successfully.",
+                "Feedback type deleted successfully.",
                 null,
                 null,
                 null

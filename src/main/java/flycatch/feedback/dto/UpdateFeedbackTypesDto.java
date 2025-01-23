@@ -2,14 +2,13 @@ package flycatch.feedback.dto;
 
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor
-public class FeedbackTypesDto {
-    private Long id;
+public class UpdateFeedbackTypesDto {
     private String name;
-    private List<EmailDto> emails;
+    private List<EmailDto> emails = new ArrayList<>();
 }

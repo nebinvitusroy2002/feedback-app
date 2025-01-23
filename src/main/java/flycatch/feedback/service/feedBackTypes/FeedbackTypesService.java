@@ -1,7 +1,8 @@
 package flycatch.feedback.service.feedBackTypes;
 
+import flycatch.feedback.dto.CreateFeedbackTypeDto;
 import flycatch.feedback.dto.EmailDto;
-import flycatch.feedback.dto.FeedbackTypesDto;
+import flycatch.feedback.dto.UpdateFeedbackTypesDto;
 import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.Email;
 import flycatch.feedback.model.FeedbackTypes;
@@ -27,10 +28,10 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
     private final FeedBackTypesRepository feedBackTypesRepository;
 
     @Override
-    public FeedbackTypes createFeedbackType(FeedbackTypesDto feedbackTypesDto) {
-        log.info("Creating a new feedback type: {}", feedbackTypesDto.getName());
+    public FeedbackTypes createFeedbackType(CreateFeedbackTypeDto createFeedbackTypeDto) {
+        log.info("Creating a new feedback type: {}", createFeedbackTypeDto.getName());
         FeedbackTypes feedbackTypes = new FeedbackTypes();
-        feedbackTypes.setName(feedbackTypesDto.getName());
+        feedbackTypes.setName(createFeedbackTypeDto.getName());
         try {
             return feedBackTypesRepository.save(feedbackTypes);
         }catch (Exception ex) {
@@ -73,17 +74,17 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
 
     @Override
     @Transactional
-    public FeedbackTypes updateFeedbackType(long id, FeedbackTypesDto feedbackTypesDto) {
+    public FeedbackTypes updateFeedbackType(long id, UpdateFeedbackTypesDto updateFeedbackTypesDto) {
         log.info("Updating feedback type with id: {}", id);
 
         FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
                 .orElseThrow(() -> new AppException("Feedback type not found with id: " + id));
 
-        feedbackType.setName(feedbackTypesDto.getName());
-        if(feedbackTypesDto.getEmails()!=null && !feedbackTypesDto.getEmails().isEmpty()){
+        feedbackType.setName(updateFeedbackTypesDto.getName());
+        if(updateFeedbackTypesDto.getEmails()!=null && !updateFeedbackTypesDto.getEmails().isEmpty()){
             log.info("not empty");
             List<Email> emailList = new ArrayList<>();
-        for(EmailDto  dto: feedbackTypesDto.getEmails()) {
+        for(EmailDto  dto: updateFeedbackTypesDto.getEmails()) {
             emailList.add(Email.builder()
                     .email(dto.getEmail())
                     .feedbackType(feedbackType)
