@@ -8,8 +8,8 @@ import flycatch.feedback.service.feedbacks.FeedBackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -52,9 +52,13 @@ public class FeedBackController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Integer feedbackType,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
-        Page<FeedBack> feedbackPage = feedBackService.getAllFeedbacks(search, feedbackType, PageRequest.of(page, size));
+        Page<FeedBack> feedbackPage = feedBackService.getAllFeedbacks(
+                search,
+                feedbackType,
+                PageRequest.of(page, size, getSort(sort)));
 
         List<FeedBackDto> feedbackDtos = feedbackPage.getContent().stream()
                 .map(this::convertToDto)
@@ -86,13 +90,31 @@ public class FeedBackController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedBackResponse> deleteFeedback(@PathVariable Long id) {
-        feedBackService.deleteByAircraftId(id);
+        feedBackService.deleteByFeedbackId(id);
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
                 "Feedback deleted successfully",
                 null
         ));
+    }
+
+    @GetMapping("/report")
+    public ResponseEntity<byte[]> exportFeedbackReport() {
+        byte[] report = feedBackService.exportFeedbackReport();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDisposition(ContentDisposition.attachment().filename("templates/feedback_report.xlsx").build());
+
+        return new ResponseEntity<>(report, headers, HttpStatus.OK);
+    }
+
+    private Sort getSort(String sortParam){
+        String[] sortParts = sortParam.split(",");
+        String field = sortParts[0];
+        String direction = sortParts.length > 1 ? sortParts[1] :"asc";
+        return direction.equalsIgnoreCase("desc") ? Sort.by(field).descending() : Sort.by(field).ascending();
     }
 
     private FeedBackDto convertToDto(FeedBack feedBack) {

@@ -1,6 +1,7 @@
 package flycatch.feedback.service.feedbacks;
 
 import flycatch.feedback.dto.FeedBackDto;
+import flycatch.feedback.dto.ReportGenerationDto;
 import flycatch.feedback.exception.AppException;
 import flycatch.feedback.model.Aircraft;
 import flycatch.feedback.model.Email;
@@ -14,13 +15,19 @@ import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import flycatch.feedback.specification.FeedbackSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.jxls.common.Context;
+import org.jxls.util.JxlsHelper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 @Slf4j
@@ -123,9 +130,45 @@ public class FeedBackService implements FeedbackServiceInterface{
         }
     }
 
-    public void deleteByAircraftId(Long aircraftId) {
-        log.info("Deleting feedbacks associated with aircraft id: {}", aircraftId);
-        feedBackRepository.findById(aircraftId);
-        log.info("Feedbacks deleted successfully for aircraft id: {}", aircraftId);
+    public void deleteByFeedbackId(Long feedbackId) {
+        log.info("Deleting feedbacks associated with feedback id: {}", feedbackId);
+        feedBackRepository.findById(feedbackId);
+        log.info("Feedbacks deleted successfully for feedback id: {}", feedbackId);
     }
+
+    public byte[] exportFeedbackReport() {
+        log.info("Exporting feedback report to byte array.");
+
+        List<FeedBack> feedBacks = feedBackRepository.findAll();
+        List<ReportGenerationDto> reportData = feedBacks.stream()
+                .map(feedBack -> new ReportGenerationDto(
+                        feedBack.getId(),
+                        feedBack.getFeedbackText(),
+                        feedBack.getFeedbackType().getName(),
+                        feedBack.getAircraft().getName(),
+                        feedBack.getAircraft().getType()
+                ))
+                .toList();
+
+        try (InputStream templateInputStream = getClass().getClassLoader().getResourceAsStream("templates/feedback_report.xlsx");
+             ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+
+            if (templateInputStream == null) {
+                throw new AppException("Template file not found.");
+            }
+
+            Context context = new Context();
+            context.putVar("feedbacks", reportData);
+
+            JxlsHelper.getInstance().processTemplate(templateInputStream, os, context);
+            log.info("Feedback report generated successfully.");
+
+            return os.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error while generating feedback report: {}", e.getMessage(), e);
+            throw new AppException("Failed to generate feedback report.");
+        }
+    }
+
 }

@@ -11,5 +11,5 @@ public interface FeedbackServiceInterface {
     FeedBack getFeedbackById(long id);
     Page<FeedBack> getAllFeedbacks(String search, Integer feedbackType, Pageable pageable);
     FeedBack updateFeedback(Long id,FeedBackDto feedBackDto);
-    void deleteByAircraftId(Long aircraftId);
+    void deleteByFeedbackId(Long aircraftId);
 }
