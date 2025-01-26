@@ -1,5 +1,6 @@
 package flycatch.feedback.filter;
 
+import flycatch.feedback.exception.AppException;
 import flycatch.feedback.service.jwt.JwtService;
 import flycatch.feedback.service.userDetails.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
@@ -31,16 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
-        final String jwtToken;
-        final String username;
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
-            return;
+            throw new AppException("Authorization header missing or invalid. Please provide a valid Bearer token.");
         }
 
-        jwtToken = authHeader.substring(7);
-        username = jwtService.extractUsername(jwtToken);
+        final String jwtToken = authHeader.substring(7);
+        final String username = jwtService.extractUsername(jwtToken);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.customUserDetailsService.loadUserByUsername(username);

@@ -8,6 +8,7 @@ import flycatch.feedback.service.aircraft.AircraftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,9 +53,10 @@ public class AircraftController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
-        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(name, type, PageRequest.of(page, size));
+        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(name, type, PageRequest.of(page, size,getSort(sort)));
 
         List<AircraftDto> aircraftDtos = aircraftPage.getContent().stream()
                 .map(this::convertToDto)
@@ -94,6 +96,29 @@ public class AircraftController {
                 null
         ));
     }
+
+    private Sort getSort(String sortParam) {
+        if (sortParam == null || sortParam.isEmpty()) {
+            return Sort.unsorted();
+        }
+
+        String[] sortFields = sortParam.split(",");
+        Sort sort = Sort.unsorted();
+
+        for (int i = 0; i < sortFields.length; i += 2) {
+            String field = sortFields[i];
+            String direction = (i + 1 < sortFields.length) ? sortFields[i + 1] : "asc";
+
+            Sort fieldSort = direction.equalsIgnoreCase("desc")
+                    ? Sort.by(field).descending()
+                    : Sort.by(field).ascending();
+
+            sort = sort.and(fieldSort);
+        }
+
+        return sort;
+    }
+
 
     private AircraftDto convertToDto(Aircraft aircraft) {
         return new AircraftDto(aircraft.getId(), aircraft.getName(), aircraft.getType());
