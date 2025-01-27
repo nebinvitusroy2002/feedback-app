@@ -5,6 +5,7 @@ import flycatch.feedback.model.Aircraft;
 import flycatch.feedback.response.aircraft.AircraftPagedResponse;
 import flycatch.feedback.response.aircraft.AircraftResponse;
 import flycatch.feedback.service.aircraft.AircraftService;
+import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -56,7 +57,11 @@ public class AircraftController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
 
-        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(name, type, PageRequest.of(page, size,getSort(sort)));
+        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(
+                name,
+                type,
+                PageRequest.of(page, size, SortUtil.getSort(sort))
+        );
 
         List<AircraftDto> aircraftDtos = aircraftPage.getContent().stream()
                 .map(this::convertToDto)
@@ -96,29 +101,6 @@ public class AircraftController {
                 null
         ));
     }
-
-    private Sort getSort(String sortParam) {
-        if (sortParam == null || sortParam.isEmpty()) {
-            return Sort.unsorted();
-        }
-
-        String[] sortFields = sortParam.split(",");
-        Sort sort = Sort.unsorted();
-
-        for (int i = 0; i < sortFields.length; i += 2) {
-            String field = sortFields[i];
-            String direction = (i + 1 < sortFields.length) ? sortFields[i + 1] : "asc";
-
-            Sort fieldSort = direction.equalsIgnoreCase("desc")
-                    ? Sort.by(field).descending()
-                    : Sort.by(field).ascending();
-
-            sort = sort.and(fieldSort);
-        }
-
-        return sort;
-    }
-
 
     private AircraftDto convertToDto(Aircraft aircraft) {
         return new AircraftDto(aircraft.getId(), aircraft.getName(), aircraft.getType());

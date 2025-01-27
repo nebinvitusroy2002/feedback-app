@@ -5,6 +5,7 @@ import flycatch.feedback.model.FeedBack;
 import flycatch.feedback.response.feedbacks.FeedBackResponse;
 import flycatch.feedback.response.feedbacks.FeedbackPagedResponse;
 import flycatch.feedback.service.feedbacks.FeedBackService;
+import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,7 +59,8 @@ public class FeedBackController {
         Page<FeedBack> feedbackPage = feedBackService.getAllFeedbacks(
                 search,
                 feedbackType,
-                PageRequest.of(page, size, getSort(sort)));
+                PageRequest.of(page, size, SortUtil.getSort(sort))
+        );
 
         List<FeedBackDto> feedbackDtos = feedbackPage.getContent().stream()
                 .map(this::convertToDto)
@@ -109,29 +111,6 @@ public class FeedBackController {
 
         return new ResponseEntity<>(report, headers, HttpStatus.OK);
     }
-
-    private Sort getSort(String sortParam) {
-        if (sortParam == null || sortParam.isEmpty()) {
-            return Sort.unsorted();
-        }
-
-        String[] sortFields = sortParam.split(",");
-        Sort sort = Sort.unsorted();
-
-        for (int i = 0; i < sortFields.length; i += 2) {
-            String field = sortFields[i];
-            String direction = (i + 1 < sortFields.length) ? sortFields[i + 1] : "asc";
-
-            Sort fieldSort = direction.equalsIgnoreCase("desc")
-                    ? Sort.by(field).descending()
-                    : Sort.by(field).ascending();
-
-            sort = sort.and(fieldSort);
-        }
-
-        return sort;
-    }
-
 
     private FeedBackDto convertToDto(FeedBack feedBack) {
         return new FeedBackDto(
