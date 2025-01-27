@@ -25,9 +25,4 @@ public class FeedbackTypes {
 
     @OneToMany(mappedBy = "feedbackType", cascade = CascadeType.ALL)
     private List<Email> emails = new ArrayList<>();
-
-    public void addEmail(Email email) {
-        emails.add(email);
-        email.setFeedbackType(this);
-    }
 }

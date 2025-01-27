@@ -84,7 +84,7 @@ public class FeedBackService implements FeedbackServiceInterface{
                     .orElseThrow(()->new AppException("Feedback not found with id: "+id));
         }catch (Exception e){
             log.error("Error while fetching feedback: {}",e.getMessage());
-            throw new AppException("An unexpected error occurred while fetching feedback.Please try again later...");
+            throw new AppException("Feedback Id not found.Please try again later...");
         }
     }
 
@@ -131,9 +131,18 @@ public class FeedBackService implements FeedbackServiceInterface{
     }
 
     public void deleteByFeedbackId(Long feedbackId) {
-        log.info("Deleting feedbacks associated with feedback id: {}", feedbackId);
-        feedBackRepository.findById(feedbackId);
-        log.info("Feedbacks deleted successfully for feedback id: {}", feedbackId);
+        log.info("Deleting feedback with id: {}", feedbackId);
+
+        FeedBack feedBack = feedBackRepository.findById(feedbackId)
+                .orElseThrow(() -> new AppException("Feedback not found with id: " + feedbackId));
+
+        try {
+            feedBackRepository.delete(feedBack);
+            log.info("Feedback deleted successfully for feedback id: {}", feedbackId);
+        } catch (Exception e) {
+            log.error("Error while deleting feedback: {}", e.getMessage());
+            throw new AppException("An error occurred while deleting the feedback. Please try again later.");
+        }
     }
 
     public byte[] exportFeedbackReport() {
