@@ -6,5 +6,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public class AppException extends RuntimeException{
-   private final String message;
+   public AppException(String message) {
+      super(message);
+   }
+
+   public AppException(String message, Object... args) {
+      super(String.format(message, args));
+   }
 }

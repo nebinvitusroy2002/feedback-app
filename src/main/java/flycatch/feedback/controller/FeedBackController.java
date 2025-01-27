@@ -7,14 +7,15 @@ import flycatch.feedback.response.feedbacks.FeedbackPagedResponse;
 import flycatch.feedback.service.feedbacks.FeedBackService;
 import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @RestController
@@ -23,15 +24,16 @@ import java.util.stream.Collectors;
 public class FeedBackController {
 
     private final FeedBackService feedBackService;
+    private final MessageSource messageSource;
 
     @PostMapping
-    public ResponseEntity<FeedBackResponse> createFeedback(@RequestBody FeedBackDto feedBackDto){
+    public ResponseEntity<FeedBackResponse> createFeedback(@RequestBody FeedBackDto feedBackDto) {
         FeedBack feedBack = feedBackService.createFeedback(feedBackDto);
         FeedBackDto createdDto = convertToDto(feedBack);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(buildFeedBackResponse(
                 HttpStatus.CREATED,
-                "Feedback created successfully",
+                messageSource.getMessage("feedback.create.success", null, Locale.getDefault()),
                 List.of(createdDto)
         ));
     }
@@ -43,7 +45,7 @@ public class FeedBackController {
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
-                "Feedback retrieved successfully",
+                messageSource.getMessage("feedback.fetch.success", null, Locale.getDefault()),
                 List.of(feedBackDto)
         ));
     }
@@ -66,7 +68,9 @@ public class FeedBackController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        String message = feedbackDtos.isEmpty() ? "No feedbacks found." : "Feedbacks retrieved successfully.";
+        String message = feedbackDtos.isEmpty()
+                ? messageSource.getMessage("feedback.fetch.notfound", null, Locale.getDefault())
+                : messageSource.getMessage("feedback.fetch.success", null, Locale.getDefault());
 
         return ResponseEntity.ok(buildPagedFeedBackResponse(
                 message,
@@ -75,7 +79,7 @@ public class FeedBackController {
                 feedbackPage.getTotalElements()
         ));
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<FeedBackResponse> updateFeedback(
             @PathVariable Long id, @RequestBody FeedBackDto feedBackDto) {
@@ -85,7 +89,7 @@ public class FeedBackController {
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
-                "Feedback updated successfully",
+                messageSource.getMessage("feedback.update.success", null, Locale.getDefault()),
                 List.of(updatedDto)
         ));
     }
@@ -96,7 +100,7 @@ public class FeedBackController {
 
         return ResponseEntity.ok(buildFeedBackResponse(
                 HttpStatus.OK,
-                "Feedback deleted successfully",
+                messageSource.getMessage("feedback.delete.success", null, Locale.getDefault()),
                 null
         ));
     }
@@ -107,7 +111,7 @@ public class FeedBackController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDisposition(ContentDisposition.attachment().filename("templates/feedback_report.xlsx").build());
+        headers.setContentDisposition(ContentDisposition.attachment().filename("feedback_report.xlsx").build());
 
         return new ResponseEntity<>(report, headers, HttpStatus.OK);
     }
@@ -124,7 +128,7 @@ public class FeedBackController {
     private FeedBackResponse buildFeedBackResponse(
             HttpStatus status,
             String message,
-            List<FeedBackDto> feedbackDtos){
+            List<FeedBackDto> feedbackDtos) {
 
         FeedBackResponse.Data data = FeedBackResponse.Data.builder()
                 .feedbacks(feedbackDtos)
@@ -143,7 +147,7 @@ public class FeedBackController {
             String message,
             List<FeedBackDto> feedbackDtos,
             Integer totalPages,
-            Long totalElements){
+            Long totalElements) {
 
         FeedbackPagedResponse.Data data = FeedbackPagedResponse.Data.builder()
                 .feedbacks(feedbackDtos)

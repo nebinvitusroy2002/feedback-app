@@ -7,15 +7,16 @@ import flycatch.feedback.response.aircraft.AircraftResponse;
 import flycatch.feedback.service.aircraft.AircraftService;
 import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @RestController
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class AircraftController {
 
     private final AircraftService aircraftService;
+    private final MessageSource messageSource;
 
     @PostMapping
     public ResponseEntity<AircraftResponse> createAircraft(@RequestBody AircraftDto aircraftDto) {
@@ -32,7 +34,7 @@ public class AircraftController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(buildAircraftResponse(
                 HttpStatus.CREATED,
-                "Aircraft created successfully",
+                messageSource.getMessage("aircraft.create.success", null, Locale.getDefault()),
                 List.of(createdDto)
         ));
     }
@@ -44,7 +46,7 @@ public class AircraftController {
 
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
-                "Aircraft retrieved successfully",
+                messageSource.getMessage("aircraft.fetch.success", null, Locale.getDefault()),
                 List.of(aircraftDto)
         ));
     }
@@ -67,7 +69,9 @@ public class AircraftController {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        String message = aircraftDtos.isEmpty() ? "No aircrafts found." : "Aircrafts retrieved successfully.";
+        String message = aircraftDtos.isEmpty()
+                ? messageSource.getMessage("aircraft.fetch.notfound", null, Locale.getDefault())
+                : messageSource.getMessage("aircraft.fetch.success", null, Locale.getDefault());
 
         return ResponseEntity.ok(buildPagedAircraftResponse(
                 message,
@@ -86,7 +90,7 @@ public class AircraftController {
 
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
-                "Aircraft updated successfully",
+                messageSource.getMessage("aircraft.update.success", null, Locale.getDefault()),
                 List.of(updatedDto)
         ));
     }
@@ -97,7 +101,7 @@ public class AircraftController {
 
         return ResponseEntity.ok(buildAircraftResponse(
                 HttpStatus.OK,
-                "Aircraft deleted successfully",
+                messageSource.getMessage("aircraft.delete.success", null, Locale.getDefault()),
                 null
         ));
     }

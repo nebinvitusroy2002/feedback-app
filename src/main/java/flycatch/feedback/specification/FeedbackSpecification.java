@@ -32,7 +32,7 @@ public class FeedbackSpecification implements Specification<FeedBack> {
 
         if (criteria.getOperation().equalsIgnoreCase(":")) {
             if (criteria.getKey().equalsIgnoreCase("feedbackText")) {
-                return builder.like(
+                return builder.equal(
                         builder.lower(path.as(String.class)),
                         "%" + criteria.getValue().toString().toLowerCase() + "%"
                 );
