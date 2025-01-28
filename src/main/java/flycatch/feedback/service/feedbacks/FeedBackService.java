@@ -152,10 +152,22 @@ public class FeedBackService implements FeedbackServiceInterface {
         }
     }
 
-    public byte[] exportFeedbackReport() {
+    public byte[] exportFeedbackReport(Long feedbackTypeId, Long aircraftId) {
         log.info("Exporting feedback report to byte array.");
 
-        List<FeedBack> feedBacks = feedBackRepository.findAll();
+        Specification<FeedBack> specification = Specification.where(null);
+
+        if (feedbackTypeId != null) {
+            SearchCriteria typeCriteria = new SearchCriteria("feedbackType.id", ":", feedbackTypeId);
+            specification = specification.and(new FeedbackSpecification(typeCriteria));
+        }
+
+        if (aircraftId != null) {
+            SearchCriteria aircraftIdCriteria = new SearchCriteria("aircraft.id", ":", aircraftId);
+            specification = specification.and(new FeedbackSpecification(aircraftIdCriteria));
+        }
+
+        List<FeedBack> feedBacks = feedBackRepository.findAll(specification);
         List<ReportGenerationDto> reportData = feedBacks.stream()
                 .map(feedBack -> new ReportGenerationDto(
                         feedBack.getId(),
@@ -164,7 +176,7 @@ public class FeedBackService implements FeedbackServiceInterface {
                         feedBack.getAircraft().getName(),
                         feedBack.getAircraft().getType()
                 ))
-                .toList();
+                .collect(Collectors.toList());
 
         try (InputStream templateInputStream = getClass().getClassLoader().getResourceAsStream("templates/feedback_report.xlsx");
              ByteArrayOutputStream os = new ByteArrayOutputStream()) {

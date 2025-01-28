@@ -106,8 +106,11 @@ public class FeedBackController {
     }
 
     @GetMapping("/report")
-    public ResponseEntity<byte[]> exportFeedbackReport() {
-        byte[] report = feedBackService.exportFeedbackReport();
+    public ResponseEntity<byte[]> exportFeedbackReport(
+            @RequestParam(required = false) Long feedbackTypeId,
+            @RequestParam(required = false) Long aircraftId) {
+
+        byte[] report = feedBackService.exportFeedbackReport(feedbackTypeId, aircraftId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);

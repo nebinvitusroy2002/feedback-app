@@ -34,12 +34,15 @@ public class FeedbackSpecification implements Specification<FeedBack> {
             if (criteria.getKey().equalsIgnoreCase("feedbackText")) {
                 return builder.equal(
                         builder.lower(path.as(String.class)),
-                        "%" + criteria.getValue().toString().toLowerCase() + "%"
+                        criteria.getValue().toString().toLowerCase()
                 );
             } else if (criteria.getKey().equalsIgnoreCase("feedbackType.id")) {
                 return builder.equal(path, criteria.getValue());
+            }else
+                if (criteria.getKey().equalsIgnoreCase("aircraft.id")){
+                    return builder.equal(path, criteria.getValue());
+                }
             }
-        }
         return null;
     }
 }
