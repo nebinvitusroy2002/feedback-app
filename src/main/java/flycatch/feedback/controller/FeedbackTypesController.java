@@ -7,12 +7,14 @@ import flycatch.feedback.response.feedbacktypes.FeedbackTypesPagedResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,14 +27,18 @@ public class FeedbackTypesController {
 
     private final FeedbackTypesService feedbackTypesService;
 
+    @Autowired
+    private MessageSource messageSource;
+
     @PostMapping
     public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody CreateFeedbackTypeDto createFeedbackTypeDto) {
         FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(createFeedbackTypeDto);
         FeedbackTypesDto createdDto = convertToDto(feedbackType);
 
+        String message = messageSource.getMessage("feedback.type.created", null, LocaleContextHolder.getLocale());
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.CREATED,
-                "Feedback type created successfully.",
+                message,
                 List.of(createdDto)
         );
 
@@ -44,9 +50,10 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.getFeedbackTypeById(id);
         FeedbackTypesDto feedbackTypeDto = convertToDto(feedbackType);
 
+        String message = messageSource.getMessage("feedback.type.retrieved", null, LocaleContextHolder.getLocale());
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type retrieved successfully.",
+                message,
                 List.of(feedbackTypeDto)
         );
 
@@ -62,14 +69,16 @@ public class FeedbackTypesController {
 
         Page<FeedbackTypes> feedbackTypesPage = feedbackTypesService.getAllFeedbackTypes(
                 name,
-                PageRequest.of(page, size,  SortUtil.getSort(sort))
+                PageRequest.of(page, size, SortUtil.getSort(sort))
         );
 
         List<FeedbackTypesDto> feedbackTypesDtos = feedbackTypesPage.getContent().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        String message = feedbackTypesDtos.isEmpty() ? "No feedback types found." : "Feedback types retrieved successfully.";
+        String message = feedbackTypesDtos.isEmpty()
+                ? messageSource.getMessage("feedback.type.empty.list", null, LocaleContextHolder.getLocale())
+                : messageSource.getMessage("feedback.type.retrieved", null, LocaleContextHolder.getLocale());
 
         FeedbackTypesPagedResponse response = buildPagedFeedbackTypesResponse(
                 message,
@@ -89,9 +98,10 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, updateFeedbackTypesDto);
         FeedbackTypesDto updatedDto = convertToDto(feedbackType);
 
+        String message = messageSource.getMessage("feedback.type.updated", null, LocaleContextHolder.getLocale());
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type updated successfully.",
+                message,
                 List.of(updatedDto)
         );
 
@@ -102,9 +112,10 @@ public class FeedbackTypesController {
     public ResponseEntity<FeedbackTypeResponse> deleteFeedbackType(@PathVariable long id) {
         feedbackTypesService.deleteFeedbackType(id);
 
+        String message = messageSource.getMessage("feedback.type.deleted", null, LocaleContextHolder.getLocale());
         FeedbackTypeResponse response = buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                "Feedback type deleted successfully.",
+                message,
                 null
         );
 

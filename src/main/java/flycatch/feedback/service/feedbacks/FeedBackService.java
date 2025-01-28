@@ -32,15 +32,15 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class FeedBackService implements FeedbackServiceInterface{
+public class FeedBackService implements FeedbackServiceInterface {
 
     private final FeedbackTypesService feedbackTypesService;
     private final AircraftService aircraftService;
     private final FeedBackRepository feedBackRepository;
     private final EmailService emailService;
 
-    public FeedBack createFeedback(FeedBackDto feedBackDto){
-        log.info("Creating new feedback for aircraft: {}",feedBackDto.getAircraftId());
+    public FeedBack createFeedback(FeedBackDto feedBackDto) {
+        log.info("Creating new feedback for aircraft: {}", feedBackDto.getAircraftId());
 
         Aircraft aircraft = aircraftService.getAircraftById(feedBackDto.getAircraftId());
         FeedbackTypes feedbackTypes = feedbackTypesService.getFeedbackTypeById(feedBackDto.getFeedbackTypeId());
@@ -53,10 +53,11 @@ public class FeedBackService implements FeedbackServiceInterface{
         FeedBack savedFeedback;
         try {
             savedFeedback = feedBackRepository.save(feedBack);
-        }catch (Exception e){
-            log.error("Error while creating feedback: {}",e.getMessage());
-            throw new AppException("An unexpected error occurred while creating feedback. Please try again later.");
+        } catch (Exception e) {
+            log.error("Error while creating feedback: {}", e.getMessage());
+            throw new AppException("feedback.create.error");
         }
+
         List<Email> emails = savedFeedback.getFeedbackType().getEmails();
         if (emails != null && !emails.isEmpty()) {
             List<String> emailAddresses = emails.stream()
@@ -68,23 +69,24 @@ public class FeedBackService implements FeedbackServiceInterface{
                 log.info("Email notifications sent successfully for feedback id: {}", savedFeedback.getId());
             } catch (Exception e) {
                 log.error("Error while sending email notifications: {}", e.getMessage(), e);
-                throw new AppException("Feedback created, but email notifications could not be sent.");
+                throw new AppException("feedback.create.email.error");
             }
         } else {
             log.warn("No email addresses found for feedback type: {}", feedbackTypes.getId());
+            throw new AppException("feedback.create.email.warning");
         }
         return savedFeedback;
     }
 
-    public FeedBack getFeedbackById(long id){
-        log.info("Fetching feedback with id: {}",id);
+    public FeedBack getFeedbackById(long id) {
+        log.info("Fetching feedback with id: {}", id);
 
         try {
             return feedBackRepository.findById(id)
-                    .orElseThrow(()->new AppException("Feedback not found with id: "+id));
-        }catch (Exception e){
-            log.error("Error while fetching feedback: {}",e.getMessage());
-            throw new AppException("Feedback Id not found.Please try again later...");
+                    .orElseThrow(() -> new AppException("feedback.fetch.notfound", String.valueOf(id)));
+        } catch (Exception e) {
+            log.error("Error while fetching feedback: {}", e.getMessage());
+            throw new AppException("feedback.fetch.notfound");
         }
     }
 
@@ -102,18 +104,23 @@ public class FeedBackService implements FeedbackServiceInterface{
         }
 
         try {
-            return feedBackRepository.findAll(specification, pageable);
+            Page<FeedBack> feedBacks = feedBackRepository.findAll(specification, pageable);
+            if (feedBacks.isEmpty()) {
+                log.error("No feedback found for search criteria: {}", search);
+                throw new AppException("feedback.search.notfound");
+            }
+            return feedBacks;
         } catch (Exception e) {
             log.error("Error while getting feedbacks: {}", e.getMessage());
-            throw new AppException("Unable to get the result. Please try again later...");
+            throw new AppException("feedback.search.error");
         }
     }
 
-    public FeedBack updateFeedback(Long id,FeedBackDto feedBackDto){
-        log.info("Updating feedback with id: {}",id);
+    public FeedBack updateFeedback(Long id, FeedBackDto feedBackDto) {
+        log.info("Updating feedback with id: {}", id);
 
         FeedBack feedBack = feedBackRepository.findById(id)
-                .orElseThrow(()->new AppException("Feedback not found with id: "+id));
+                .orElseThrow(() -> new AppException("feedback.fetch.notfound", String.valueOf(id)));
 
         Aircraft aircraft = aircraftService.getAircraftById(feedBackDto.getAircraftId());
         FeedbackTypes feedbackTypes = feedbackTypesService.getFeedbackTypeById(feedBackDto.getFeedbackTypeId());
@@ -124,9 +131,9 @@ public class FeedBackService implements FeedbackServiceInterface{
 
         try {
             return feedBackRepository.save(feedBack);
-        }catch (Exception e){
-            log.error("Error while updating feedback: {}",e.getMessage());
-            throw new AppException("Unable to update feedback. Please try again later");
+        } catch (Exception e) {
+            log.error("Error while updating feedback: {}", e.getMessage());
+            throw new AppException("feedback.update.error");
         }
     }
 
@@ -134,14 +141,14 @@ public class FeedBackService implements FeedbackServiceInterface{
         log.info("Deleting feedback with id: {}", feedbackId);
 
         FeedBack feedBack = feedBackRepository.findById(feedbackId)
-                .orElseThrow(() -> new AppException("Feedback not found with id: " + feedbackId));
+                .orElseThrow(() -> new AppException("feedback.delete.notfound", String.valueOf(feedbackId)));
 
         try {
             feedBackRepository.delete(feedBack);
             log.info("Feedback deleted successfully for feedback id: {}", feedbackId);
         } catch (Exception e) {
             log.error("Error while deleting feedback: {}", e.getMessage());
-            throw new AppException("An error occurred while deleting the feedback. Please try again later.");
+            throw new AppException("feedback.delete.error");
         }
     }
 
@@ -163,21 +170,17 @@ public class FeedBackService implements FeedbackServiceInterface{
              ByteArrayOutputStream os = new ByteArrayOutputStream()) {
 
             if (templateInputStream == null) {
-                throw new AppException("Template file not found.");
+                throw new AppException("feedback.report.export.template.notfound");
             }
-
             Context context = new Context();
             context.putVar("feedbacks", reportData);
-
             JxlsHelper.getInstance().processTemplate(templateInputStream, os, context);
             log.info("Feedback report generated successfully.");
-
             return os.toByteArray();
 
         } catch (Exception e) {
             log.error("Error while generating feedback report: {}", e.getMessage(), e);
-            throw new AppException("Failed to generate feedback report.");
+            throw new AppException("feedback.report.export.error");
         }
     }
-
 }

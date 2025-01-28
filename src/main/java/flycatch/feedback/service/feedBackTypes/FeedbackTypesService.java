@@ -34,9 +34,9 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
         feedbackTypes.setName(createFeedbackTypeDto.getName());
         try {
             return feedBackTypesRepository.save(feedbackTypes);
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             log.error("Unexpected error while creating feedback type: {}", ex.getMessage());
-            throw new AppException("An unexpected error occurred while creating feedback type. Please try again later.");
+            throw new AppException("feedback.type.create.error");
         }
     }
 
@@ -45,10 +45,10 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
         log.info("Fetching feedback type with id: {}", id);
         try {
             return feedBackTypesRepository.findById(id)
-                    .orElseThrow(() -> new AppException("Feedback type not found with id: " + id));
-        }catch (Exception ex) {
+                    .orElseThrow(() -> new AppException("feedback.type.not.found",String.valueOf(id)));
+        } catch (Exception ex) {
             log.error("Unexpected error while fetching feedback type: {}", ex.getMessage());
-            throw new AppException("An unexpected error occurred while fetching feedback type. Please try again later.");
+            throw new AppException("feedback.type.not.found");
         }
     }
 
@@ -67,10 +67,9 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
             return feedBackTypesRepository.findAll(specification, pageable);
         } catch (Exception ex) {
             log.error("Error while searching feedback types: {}", ex.getMessage());
-            throw new AppException("Unable to search feedback types. Please try again later.");
+            throw new AppException("feedback.type.search.error");
         }
     }
-
 
     @Override
     @Transactional
@@ -78,18 +77,17 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
         log.info("Updating feedback type with id: {}", id);
 
         FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
-                .orElseThrow(() -> new AppException("Feedback type not found with id: " + id));
+                .orElseThrow(() -> new AppException("feedback.type.not.found", String.valueOf(id)));
 
         feedbackType.setName(updateFeedbackTypesDto.getName());
-        if(updateFeedbackTypesDto.getEmails()!=null && !updateFeedbackTypesDto.getEmails().isEmpty()){
-            log.info("not empty");
+        if (updateFeedbackTypesDto.getEmails() != null && !updateFeedbackTypesDto.getEmails().isEmpty()) {
             List<Email> emailList = new ArrayList<>();
-        for(EmailDto  dto: updateFeedbackTypesDto.getEmails()) {
-            emailList.add(Email.builder()
-                    .email(dto.getEmail())
-                    .feedbackType(feedbackType)
-                    .build());
-        }
+            for (EmailDto dto : updateFeedbackTypesDto.getEmails()) {
+                emailList.add(Email.builder()
+                        .email(dto.getEmail())
+                        .feedbackType(feedbackType)
+                        .build());
+            }
             feedbackType.setEmails(emailList);
         }
 
@@ -97,20 +95,33 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
             return feedBackTypesRepository.save(feedbackType);
         } catch (Exception ex) {
             log.error("Error occurred while updating feedback type: {}", ex.getMessage(), ex);
-            throw new AppException("Failed to update feedback type: " + ex.getMessage());
+            throw new AppException("feedback.type.update.error");
         }
     }
 
-
-    @Override
     public void deleteFeedbackType(long id) {
         log.info("Deleting feedback type with id: {}", id);
+
+        FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
+                .orElseThrow(() -> new AppException("feedback.type.not.found"));
+
+        if (!feedbackType.getEmails().isEmpty()) {
+            log.warn("Cannot delete feedback type with id: {} as it has associated emails", id);
+            throw new AppException("feedback.type.has.emails");
+        }
+
+        if (feedBackTypesRepository.existsFeedbackForFeedbackType(id)) {
+            log.warn("Cannot delete feedback type with id: {} as it has associated feedback", id);
+            throw new AppException("feedback.type.has.feedback");
+        }
+
         try {
-            feedBackTypesRepository.deleteById(id);
+            feedBackTypesRepository.delete(feedbackType);
             log.info("Feedback type with id: {} deleted successfully", id);
-        }catch (Exception ex) {
-            log.error("Unexpected error while deleting feedback type: {}", ex.getMessage());
-            throw new AppException("An unexpected error occurred. Please try again later.");
+        } catch (Exception ex) {
+            log.error("Error occurred while deleting feedback type with id: {}. Error: {}", id, ex.getMessage());
+            throw new AppException("feedback.type.delete.error");
         }
     }
 }
+
