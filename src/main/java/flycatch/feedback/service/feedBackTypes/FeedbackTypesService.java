@@ -8,6 +8,7 @@ import flycatch.feedback.model.Email;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.repository.FeedBackTypesRepository;
 import flycatch.feedback.search.SearchCriteria;
+import flycatch.feedback.service.feedbacks.FeedBackService;
 import flycatch.feedback.specification.FeedbackTypesSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -99,15 +100,29 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
         }
     }
 
-    @Override
     public void deleteFeedbackType(long id) {
         log.info("Deleting feedback type with id: {}", id);
+
+        FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
+                .orElseThrow(() -> new AppException("feedback.type.not.found"));
+
+        if (!feedbackType.getEmails().isEmpty()) {
+            log.warn("Cannot delete feedback type with id: {} as it has associated emails", id);
+            throw new AppException("feedback.type.has.emails");
+        }
+
+        if (feedBackTypesRepository.existsFeedbackForFeedbackType(id)) {
+            log.warn("Cannot delete feedback type with id: {} as it has associated feedback", id);
+            throw new AppException("feedback.type.has.feedback");
+        }
+
         try {
-            feedBackTypesRepository.deleteById(id);
+            feedBackTypesRepository.delete(feedbackType);
             log.info("Feedback type with id: {} deleted successfully", id);
         } catch (Exception ex) {
-            log.error("Unexpected error while deleting feedback type: {}", ex.getMessage());
+            log.error("Error occurred while deleting feedback type with id: {}. Error: {}", id, ex.getMessage());
             throw new AppException("feedback.type.delete.error");
         }
     }
 }
+
