@@ -81,9 +81,18 @@ public class AircraftService implements AircraftServiceInterface{
 
     public void deleteAircraft(Long id) {
         log.info("Deleting aircraft with id: {}", id);
+        if (aircraftRepository.existsFeedbackForAircraft(id)) {
+            log.error("Cannot delete aircraft with id {}: Feedback exists.", id);
+            throw new AppException("Cannot delete aircraft. Feedback data exists in the feedback table.");
+        }
         aircraftRepository.findById(id)
                 .orElseThrow(() -> new AppException("Aircraft not found with id: " + id));
-        aircraftRepository.deleteById(id);
-        log.info("Aircraft deleted successfully with id: {}", id);
+        try {
+            aircraftRepository.deleteById(id);
+            log.info("Aircraft deleted successfully with id: {}", id);
+        } catch (Exception ex) {
+            log.error("Error while deleting aircraft with id {}: {}", id, ex.getMessage());
+            throw new AppException("An unexpected error occurred while deleting the aircraft. Please try again later.");
+        }
     }
 }

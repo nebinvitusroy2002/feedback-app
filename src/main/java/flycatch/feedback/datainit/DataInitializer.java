@@ -47,10 +47,10 @@ public class DataInitializer {
             return roleRepository.save(role);
         });
 
-        if (userRepository.findByEmail("admin@example.com").isEmpty()) {
+        if (userRepository.findByEmail("admin@gmail.com").isEmpty()) {
             User admin = new User();
             admin.setUserName("ADMIN");
-            admin.setEmail("admin@example.com");
+            admin.setEmail("admin@gmail.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
 
             List<Role> roles = new ArrayList<>();

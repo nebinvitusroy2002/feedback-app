@@ -5,9 +5,11 @@ import flycatch.feedback.model.Aircraft;
 import flycatch.feedback.response.aircraft.AircraftPagedResponse;
 import flycatch.feedback.response.aircraft.AircraftResponse;
 import flycatch.feedback.service.aircraft.AircraftService;
+import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -52,9 +54,14 @@ public class AircraftController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
-        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(name, type, PageRequest.of(page, size));
+        Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(
+                name,
+                type,
+                PageRequest.of(page, size, SortUtil.getSort(sort))
+        );
 
         List<AircraftDto> aircraftDtos = aircraftPage.getContent().stream()
                 .map(this::convertToDto)

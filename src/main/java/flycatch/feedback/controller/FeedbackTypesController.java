@@ -5,9 +5,11 @@ import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.response.feedbacktypes.FeedbackTypeResponse;
 import flycatch.feedback.response.feedbacktypes.FeedbackTypesPagedResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
+import flycatch.feedback.util.SortUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,11 +57,12 @@ public class FeedbackTypesController {
     public ResponseEntity<FeedbackTypesPagedResponse> getAllFeedbackTypes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String name) {
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "id,asc") String sort) {
 
         Page<FeedbackTypes> feedbackTypesPage = feedbackTypesService.getAllFeedbackTypes(
                 name,
-                PageRequest.of(page, size)
+                PageRequest.of(page, size,  SortUtil.getSort(sort))
         );
 
         List<FeedbackTypesDto> feedbackTypesDtos = feedbackTypesPage.getContent().stream()
