@@ -8,7 +8,6 @@ import flycatch.feedback.model.Email;
 import flycatch.feedback.model.FeedbackTypes;
 import flycatch.feedback.repository.FeedBackTypesRepository;
 import flycatch.feedback.search.SearchCriteria;
-import flycatch.feedback.service.feedbacks.FeedBackService;
 import flycatch.feedback.specification.FeedbackTypesSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
