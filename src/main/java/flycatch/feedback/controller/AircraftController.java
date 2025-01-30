@@ -6,6 +6,7 @@ import flycatch.feedback.response.aircraft.AircraftPagedResponse;
 import flycatch.feedback.response.aircraft.AircraftResponse;
 import flycatch.feedback.service.aircraft.AircraftService;
 import flycatch.feedback.util.SortUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public class AircraftController {
     private final MessageSource messageSource;
 
     @PostMapping
-    public ResponseEntity<AircraftResponse> createAircraft(@RequestBody AircraftDto aircraftDto) {
+    public ResponseEntity<AircraftResponse> createAircraft(@Valid @RequestBody AircraftDto aircraftDto) {
         Aircraft aircraft = aircraftService.createAircraft(aircraftDto);
         AircraftDto createdDto = convertToDto(aircraft);
 
@@ -70,7 +71,7 @@ public class AircraftController {
                 .collect(Collectors.toList());
 
         String message = aircraftDtos.isEmpty()
-                ? messageSource.getMessage("aircraft.fetch.notfound", null, Locale.getDefault())
+                ? messageSource.getMessage("aircraft.search.error", null, Locale.getDefault())
                 : messageSource.getMessage("aircraft.fetch.success", null, Locale.getDefault());
 
         return ResponseEntity.ok(buildPagedAircraftResponse(
@@ -114,15 +115,20 @@ public class AircraftController {
             HttpStatus status,
             String message,
             List<AircraftDto> aircraftDtos) {
-        AircraftResponse.Data data = AircraftResponse.Data.builder()
-                .aircrafts(aircraftDtos)
-                .build();
+
         AircraftResponse.AircraftResponseBuilder responseBuilder = AircraftResponse.builder()
                 .timestamp(LocalDateTime.now().toString())
                 .code(status.value())
                 .status(true)
-                .message(message)
-                .data(data);
+                .message(message);
+
+        if (aircraftDtos != null) {
+            AircraftResponse.Data data = AircraftResponse.Data.builder()
+                    .aircrafts(aircraftDtos)
+                    .build();
+            responseBuilder.data(data);
+        }
+
         return responseBuilder.build();
     }
 

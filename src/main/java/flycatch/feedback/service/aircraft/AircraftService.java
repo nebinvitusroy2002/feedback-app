@@ -8,13 +8,10 @@ import flycatch.feedback.search.SearchCriteria;
 import flycatch.feedback.specification.AircraftSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import java.util.Locale;
 
 @Service
 @Slf4j
@@ -22,7 +19,6 @@ import java.util.Locale;
 public class AircraftService implements AircraftServiceInterface {
 
     private final AircraftRepository aircraftRepository;
-    private final MessageSource messageSource;
 
     public Aircraft createAircraft(AircraftDto aircraftDto) {
         log.info("Creating a new aircraft: {}", aircraftDto.getName());
@@ -65,7 +61,7 @@ public class AircraftService implements AircraftServiceInterface {
             return aircraftRepository.findAll(specification, pageable);
         } catch (Exception ex) {
             log.error("Error while searching aircrafts: {}", ex.getMessage());
-            throw new AppException("aircraft.search.error");
+            throw new AppException("aircraft.error");
         }
     }
 
@@ -73,8 +69,13 @@ public class AircraftService implements AircraftServiceInterface {
         log.info("Updating aircraft with id: {}", id);
         Aircraft aircraft = aircraftRepository.findById(id)
                 .orElseThrow(() -> new AppException("aircraft.fetch.notfound",String.valueOf(id)));
-        aircraft.setName(aircraftDto.getName());
-        aircraft.setType(aircraftDto.getType());
+        if (aircraftDto.getName() != null) {
+            aircraft.setName(aircraftDto.getName());
+        }
+        if (aircraftDto.getType() != null) {
+            aircraft.setType(aircraftDto.getType());
+        }
+
         try {
             return aircraftRepository.save(aircraft);
         } catch (Exception ex) {

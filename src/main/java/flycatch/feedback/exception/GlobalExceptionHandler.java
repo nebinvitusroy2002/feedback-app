@@ -1,10 +1,12 @@
 package flycatch.feedback.exception;
 
 import flycatch.feedback.response.ErrorResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -12,13 +14,10 @@ import java.util.Locale;
 
 @ControllerAdvice
 @Slf4j
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
     private final MessageSource messageSource;
-
-    public GlobalExceptionHandler(MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppException(AppException e, Locale locale) {
@@ -34,17 +33,26 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
-    @ExceptionHandler(TokenExpiredException.class)
-    public ResponseEntity<ErrorResponse> handleTokenExpired(TokenExpiredException ex, Locale locale) {
-        log.error("TokenExpiredException: {}", ex.getMessage());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, Locale locale) {
+        log.error("Validation error: {}", ex.getMessage());
 
-        String message = messageSource.getMessage(ex.getMessage(), null, locale);
+        String errorMessage = ex.getBindingResult().getAllErrors().stream()
+                .findFirst()
+                .map(error ->{
+                    String defaultMessage = error.getDefaultMessage();
+                    if (defaultMessage == null || defaultMessage.trim().isEmpty()) {
+                        return "Validation failed. Please check the errors.";
+                    }
+                    return messageSource.getMessage(defaultMessage, null, locale);
+                })
+                .orElse("Validation failed. Please check the errors.");
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.builder()
                         .code(HttpStatus.BAD_REQUEST.value())
                         .success(false)
-                        .message(message)
+                        .message(errorMessage)
                         .build());
     }
 

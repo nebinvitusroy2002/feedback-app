@@ -42,6 +42,7 @@ public class AuthService implements AuthServiceInterface{
         if (doesUserExistByEmail(request.getEmail())) {
             throw new AppException("user.already.exists");
         }
+
         User user = new User();
         user.setUserName(request.getUserName());
         user.setEmail(request.getEmail());
@@ -56,7 +57,7 @@ public class AuthService implements AuthServiceInterface{
             UserDto userDto = new UserDto(savedUser.getId(), savedUser.getUserName(), savedUser.getEmail(), roles);
             return buildUserResponse(userDto);
         } catch (Exception e) {
-            throw new AppException("error.unexpected");
+            throw new AppException("username.exists");
         }
     }
 
@@ -135,9 +136,9 @@ public class AuthService implements AuthServiceInterface{
         }
 
         try {
-            User user = findUserByResetToken(token);
-            if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())){
-                log.error("Reset token expired for user: {}",user.getEmail());
+             User user = findUserByResetToken(token);
+            if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+                log.error("Reset token expired for user: {}", user.getEmail());
                 throw new AppException("invalid.reset.token");
             }
 
@@ -147,12 +148,9 @@ public class AuthService implements AuthServiceInterface{
             userRepository.save(user);
 
             log.info("Password successfully reset for user: {}",user.getEmail());
-        }catch (NoSuchElementException  e) {
-            log.error("Reset token error: {}", e.getMessage());
-            throw new AppException("invalid.reset.token");
         } catch (Exception e) {
             log.error("Unexpected error during password reset for token {}: {}", token, e.getMessage());
-            throw new AppException("error.unexpected");
+            throw new AppException("invalid.reset.token");
         }
     }
 
@@ -175,9 +173,6 @@ public class AuthService implements AuthServiceInterface{
         }catch (AppException e) {
             log.error("Application exception occurred: {}", e.getMessage());
             throw e;
-        }catch (RuntimeException e) {
-            log.error("No user found with email: {}", email, e);
-            throw new AppException("user.not.found");
         }catch (Exception e) {
             log.error("Unexpected error during password reset for user {}: {}", email, e.getMessage());
             throw new AppException("error.unexpected");

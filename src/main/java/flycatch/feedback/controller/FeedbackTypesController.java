@@ -6,6 +6,7 @@ import flycatch.feedback.response.feedbacktypes.FeedbackTypeResponse;
 import flycatch.feedback.response.feedbacktypes.FeedbackTypesPagedResponse;
 import flycatch.feedback.service.feedBackTypes.FeedbackTypesService;
 import flycatch.feedback.util.SortUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,23 +28,18 @@ import java.util.stream.Collectors;
 public class FeedbackTypesController {
 
     private final FeedbackTypesService feedbackTypesService;
-
-    @Autowired
-    private MessageSource messageSource;
+    private final MessageSource messageSource;
 
     @PostMapping
-    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@RequestBody CreateFeedbackTypeDto createFeedbackTypeDto) {
+    public ResponseEntity<FeedbackTypeResponse> createFeedbackType(@Valid @RequestBody CreateFeedbackTypeDto createFeedbackTypeDto) {
         FeedbackTypes feedbackType = feedbackTypesService.createFeedbackType(createFeedbackTypeDto);
         FeedbackTypesDto createdDto = convertToDto(feedbackType);
 
-        String message = messageSource.getMessage("feedback.type.created", null, LocaleContextHolder.getLocale());
-        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+        return ResponseEntity.status(HttpStatus.CREATED).body(buildFeedbackTypeResponse(
                 HttpStatus.CREATED,
-                message,
+                messageSource.getMessage("feedback.type.created",null, Locale.getDefault()),
                 List.of(createdDto)
-        );
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        ));
     }
 
     @GetMapping("/{id}")
@@ -50,14 +47,11 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.getFeedbackTypeById(id);
         FeedbackTypesDto feedbackTypeDto = convertToDto(feedbackType);
 
-        String message = messageSource.getMessage("feedback.type.retrieved", null, LocaleContextHolder.getLocale());
-        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+        return ResponseEntity.ok(buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                message,
+                messageSource.getMessage("feedback.type.retrieved",null,Locale.getDefault()),
                 List.of(feedbackTypeDto)
-        );
-
-        return ResponseEntity.ok(response);
+        ));
     }
 
     @GetMapping
@@ -80,14 +74,12 @@ public class FeedbackTypesController {
                 ? messageSource.getMessage("feedback.type.empty.list", null, LocaleContextHolder.getLocale())
                 : messageSource.getMessage("feedback.type.retrieved", null, LocaleContextHolder.getLocale());
 
-        FeedbackTypesPagedResponse response = buildPagedFeedbackTypesResponse(
+        return ResponseEntity.ok(buildPagedFeedbackTypesResponse(
                 message,
                 feedbackTypesDtos,
                 feedbackTypesPage.getTotalPages(),
                 feedbackTypesPage.getTotalElements()
-        );
-
-        return ResponseEntity.ok(response);
+        ));
     }
 
     @PutMapping("/{id}")
@@ -98,28 +90,22 @@ public class FeedbackTypesController {
         FeedbackTypes feedbackType = feedbackTypesService.updateFeedbackType(id, updateFeedbackTypesDto);
         FeedbackTypesDto updatedDto = convertToDto(feedbackType);
 
-        String message = messageSource.getMessage("feedback.type.updated", null, LocaleContextHolder.getLocale());
-        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+        return ResponseEntity.ok(buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                message,
+                messageSource.getMessage("feedback.type.updated",null,Locale.getDefault()),
                 List.of(updatedDto)
-        );
-
-        return ResponseEntity.ok(response);
+        ));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<FeedbackTypeResponse> deleteFeedbackType(@PathVariable long id) {
         feedbackTypesService.deleteFeedbackType(id);
 
-        String message = messageSource.getMessage("feedback.type.deleted", null, LocaleContextHolder.getLocale());
-        FeedbackTypeResponse response = buildFeedbackTypeResponse(
+        return ResponseEntity.ok(buildFeedbackTypeResponse(
                 HttpStatus.OK,
-                message,
+                messageSource.getMessage("feedback.type.deleted",null,Locale.getDefault()),
                 null
-        );
-
-        return ResponseEntity.ok(response);
+        ));
     }
 
     private FeedbackTypesDto convertToDto(FeedbackTypes feedbackTypes) {
@@ -134,17 +120,19 @@ public class FeedbackTypesController {
             String message,
             List<FeedbackTypesDto> feedbackTypesDtos) {
 
-        FeedbackTypeResponse.Data data = FeedbackTypeResponse.Data.builder()
-                .feedbackTypes(feedbackTypesDtos)
-                .build();
-
-        return FeedbackTypeResponse.builder()
+        FeedbackTypeResponse.FeedbackTypeResponseBuilder responseBuilder = FeedbackTypeResponse.builder()
                 .timestamp(LocalDateTime.now().toString())
                 .code(status.value())
                 .status(true)
-                .message(message)
-                .data(data)
-                .build();
+                .message(message);
+
+        if (feedbackTypesDtos != null){
+            FeedbackTypeResponse.Data data = FeedbackTypeResponse.Data.builder()
+                    .feedbackTypes(feedbackTypesDtos)
+                    .build();
+            responseBuilder.data(data);
+        }
+        return responseBuilder.build();
     }
 
     private FeedbackTypesPagedResponse buildPagedFeedbackTypesResponse(

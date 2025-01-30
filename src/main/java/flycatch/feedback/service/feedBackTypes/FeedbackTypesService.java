@@ -79,7 +79,10 @@ public class FeedbackTypesService implements FeedbackTypesServiceInterface {
         FeedbackTypes feedbackType = feedBackTypesRepository.findById(id)
                 .orElseThrow(() -> new AppException("feedback.type.not.found", String.valueOf(id)));
 
-        feedbackType.setName(updateFeedbackTypesDto.getName());
+        if (updateFeedbackTypesDto.getName() != null && !updateFeedbackTypesDto.getName().trim().isEmpty()){
+            feedbackType.setName(updateFeedbackTypesDto.getName());
+        }
+
         if (updateFeedbackTypesDto.getEmails() != null && !updateFeedbackTypesDto.getEmails().isEmpty()) {
             List<Email> emailList = new ArrayList<>();
             for (EmailDto dto : updateFeedbackTypesDto.getEmails()) {

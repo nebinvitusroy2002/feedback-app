@@ -1,5 +1,6 @@
 package flycatch.feedback.response.aircraft;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import flycatch.feedback.dto.AircraftDto;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AircraftResponse {
     private String timestamp;
     private int code;

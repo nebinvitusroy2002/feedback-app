@@ -6,6 +6,7 @@ import flycatch.feedback.response.feedbacks.FeedBackResponse;
 import flycatch.feedback.response.feedbacks.FeedbackPagedResponse;
 import flycatch.feedback.service.feedbacks.FeedBackService;
 import flycatch.feedback.util.SortUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
@@ -27,7 +28,7 @@ public class FeedBackController {
     private final MessageSource messageSource;
 
     @PostMapping
-    public ResponseEntity<FeedBackResponse> createFeedback(@RequestBody FeedBackDto feedBackDto) {
+    public ResponseEntity<FeedBackResponse> createFeedback(@Valid @RequestBody FeedBackDto feedBackDto) {
         FeedBack feedBack = feedBackService.createFeedback(feedBackDto);
         FeedBackDto createdDto = convertToDto(feedBack);
 
@@ -52,15 +53,15 @@ public class FeedBackController {
 
     @GetMapping
     public ResponseEntity<FeedbackPagedResponse> getAllFeedbacks(
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Integer feedbackType,
+            @RequestParam(required = false) String text,
+            @RequestParam(required = false) Integer typeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
 
         Page<FeedBack> feedbackPage = feedBackService.getAllFeedbacks(
-                search,
-                feedbackType,
+                text,
+                typeId,
                 PageRequest.of(page, size, SortUtil.getSort(sort))
         );
 
@@ -69,7 +70,7 @@ public class FeedBackController {
                 .collect(Collectors.toList());
 
         String message = feedbackDtos.isEmpty()
-                ? messageSource.getMessage("feedback.fetch.notfound", null, Locale.getDefault())
+                ? messageSource.getMessage("feedback.fetch.notfound.success", null, Locale.getDefault())
                 : messageSource.getMessage("feedback.fetch.success", null, Locale.getDefault());
 
         return ResponseEntity.ok(buildPagedFeedBackResponse(
@@ -133,17 +134,19 @@ public class FeedBackController {
             String message,
             List<FeedBackDto> feedbackDtos) {
 
-        FeedBackResponse.Data data = FeedBackResponse.Data.builder()
-                .feedbacks(feedbackDtos)
-                .build();
-
-        return FeedBackResponse.builder()
+        FeedBackResponse.FeedBackResponseBuilder response = FeedBackResponse.builder()
                 .timestamp(LocalDateTime.now().toString())
                 .code(status.value())
                 .status(true)
-                .message(message)
-                .data(data)
-                .build();
+                .message(message);
+
+        if (feedbackDtos != null){
+            FeedBackResponse.Data data = FeedBackResponse.Data.builder()
+                    .feedbacks(feedbackDtos)
+                    .build();
+            response.data(data);
+        }
+        return response.build();
     }
 
     private FeedbackPagedResponse buildPagedFeedBackResponse(
