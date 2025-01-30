@@ -90,26 +90,21 @@ public class FeedBackService implements FeedbackServiceInterface {
         }
     }
 
-    public Page<FeedBack> getAllFeedbacks(String search, Integer feedbackType, Pageable pageable) {
+    public Page<FeedBack> getAllFeedbacks(String text, Integer typeId, Pageable pageable) {
         Specification<FeedBack> specification = Specification.where(null);
 
-        if (search != null && !search.isEmpty()) {
-            SearchCriteria textCriteria = new SearchCriteria("feedbackText", ":", search);
+        if (text != null && !text.isEmpty()) {
+            SearchCriteria textCriteria = new SearchCriteria("feedbackText", ":", text);
             specification = specification.and(new FeedbackSpecification(textCriteria));
         }
 
-        if (feedbackType != null) {
-            SearchCriteria typeCriteria = new SearchCriteria("feedbackType.id", ":", feedbackType);
+        if (typeId != null) {
+            SearchCriteria typeCriteria = new SearchCriteria("feedbackType.id", ":", typeId);
             specification = specification.and(new FeedbackSpecification(typeCriteria));
         }
 
         try {
-            Page<FeedBack> feedBacks = feedBackRepository.findAll(specification, pageable);
-            if (feedBacks.isEmpty()) {
-                log.error("No feedback found for search criteria: {}", search);
-                throw new AppException("feedback.search.notfound");
-            }
-            return feedBacks;
+            return feedBackRepository.findAll(specification, pageable);
         } catch (Exception e) {
             log.error("Error while getting feedbacks: {}", e.getMessage());
             throw new AppException("feedback.search.error");
@@ -122,12 +117,17 @@ public class FeedBackService implements FeedbackServiceInterface {
         FeedBack feedBack = feedBackRepository.findById(id)
                 .orElseThrow(() -> new AppException("feedback.fetch.notfound", String.valueOf(id)));
 
-        Aircraft aircraft = aircraftService.getAircraftById(feedBackDto.getAircraftId());
-        FeedbackTypes feedbackTypes = feedbackTypesService.getFeedbackTypeById(feedBackDto.getFeedbackTypeId());
-
-        feedBack.setFeedbackText(feedBackDto.getFeedbackText());
-        feedBack.setFeedbackType(feedbackTypes);
-        feedBack.setAircraft(aircraft);
+        if (feedBackDto.getFeedbackText() != null){
+            feedBack.setFeedbackText(feedBackDto.getFeedbackText());
+        }
+        if (feedBackDto.getFeedbackTypeId() != 0){
+            FeedbackTypes feedbackTypes = feedbackTypesService.getFeedbackTypeById(feedBackDto.getFeedbackTypeId());
+            feedBack.setFeedbackType(feedbackTypes);
+        }
+        if (feedBackDto.getAircraftId() != 0){
+            Aircraft aircraft = aircraftService.getAircraftById(feedBackDto.getAircraftId());
+            feedBack.setAircraft(aircraft);
+        }
 
         try {
             return feedBackRepository.save(feedBack);
@@ -152,10 +152,22 @@ public class FeedBackService implements FeedbackServiceInterface {
         }
     }
 
-    public byte[] exportFeedbackReport() {
+    public byte[] exportFeedbackReport(Long feedbackTypeId, Long aircraftId) {
         log.info("Exporting feedback report to byte array.");
 
-        List<FeedBack> feedBacks = feedBackRepository.findAll();
+        Specification<FeedBack> specification = Specification.where(null);
+
+        if (feedbackTypeId != null) {
+            SearchCriteria typeCriteria = new SearchCriteria("feedbackType.id", ":", feedbackTypeId);
+            specification = specification.and(new FeedbackSpecification(typeCriteria));
+        }
+
+        if (aircraftId != null) {
+            SearchCriteria aircraftIdCriteria = new SearchCriteria("aircraft.id", ":", aircraftId);
+            specification = specification.and(new FeedbackSpecification(aircraftIdCriteria));
+        }
+
+        List<FeedBack> feedBacks = feedBackRepository.findAll(specification);
         List<ReportGenerationDto> reportData = feedBacks.stream()
                 .map(feedBack -> new ReportGenerationDto(
                         feedBack.getId(),
@@ -164,7 +176,7 @@ public class FeedBackService implements FeedbackServiceInterface {
                         feedBack.getAircraft().getName(),
                         feedBack.getAircraft().getType()
                 ))
-                .toList();
+                .collect(Collectors.toList());
 
         try (InputStream templateInputStream = getClass().getClassLoader().getResourceAsStream("templates/feedback_report.xlsx");
              ByteArrayOutputStream os = new ByteArrayOutputStream()) {
