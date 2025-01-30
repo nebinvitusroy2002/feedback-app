@@ -54,15 +54,13 @@ public class AircraftController {
 
     @GetMapping
     public ResponseEntity<AircraftPagedResponse> getAllAircrafts(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String searchTerm,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort) {
 
         Page<Aircraft> aircraftPage = aircraftService.getAllAircrafts(
-                name,
-                type,
+                searchTerm,
                 PageRequest.of(page, size, SortUtil.getSort(sort))
         );
 

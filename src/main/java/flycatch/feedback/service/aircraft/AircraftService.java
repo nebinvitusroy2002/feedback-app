@@ -44,17 +44,13 @@ public class AircraftService implements AircraftServiceInterface {
         }
     }
 
-    public Page<Aircraft> getAllAircrafts(String name, String type, Pageable pageable) {
+    public Page<Aircraft> getAllAircrafts(String searchTerm, Pageable pageable) {
         Specification<Aircraft> specification = Specification.where(null);
 
-        if (name != null && !name.isEmpty()) {
-            SearchCriteria nameCriteria = new SearchCriteria("name", ":", name);
-            specification = specification.and(new AircraftSpecification(nameCriteria));
-        }
-
-        if (type != null && !type.isEmpty()) {
-            SearchCriteria typeCriteria = new SearchCriteria("type", ":", type);
-            specification = specification.and(new AircraftSpecification(typeCriteria));
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            Specification<Aircraft> nameSpec = new AircraftSpecification(new SearchCriteria("name", ":", searchTerm));
+            Specification<Aircraft> typeSpec = new AircraftSpecification(new SearchCriteria("type", ":", searchTerm));
+            specification = specification.and(nameSpec.or(typeSpec));
         }
 
         try {
